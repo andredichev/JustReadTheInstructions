@@ -1,0 +1,149 @@
+﻿using System;
+using System.Linq;
+using System.Reflection;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace JustReadTheInstructions
+{
+    public static class DeferredIntegration
+    {
+        private static bool? _isAvailable;
+        private static Type _forwardRenderingCompatibilityType;
+        private static MethodInfo _initMethod;
+
+        public static bool IsAvailable
+        {
+            get
+            {
+                if (_isAvailable.HasValue)
+                    return _isAvailable.Value;
+
+                try
+                {
+                    var deferredAssembly = AssemblyLoader.loadedAssemblies
+                        .FirstOrDefault(a => a.name == "Deferred")?.assembly;
+
+                    if (deferredAssembly == null)
+                    {
+                        Debug.Log("[JRTI-Deferred]: Deferred mod not found - using forward rendering");
+                        _isAvailable = false;
+                        return false;
+                    }
+
+                    _forwardRenderingCompatibilityType = deferredAssembly.GetType("Deferred.ForwardRenderingCompatibility");
+
+                    if (_forwardRenderingCompatibilityType == null)
+                    {
+                        Debug.LogWarning("[JRTI-Deferred]: ForwardRenderingCompatibility type not found - incompatible version?");
+                        _isAvailable = false;
+                        return false;
+                    }
+
+                    _initMethod = _forwardRenderingCompatibilityType.GetMethod("Init",
+                        BindingFlags.Public | BindingFlags.Instance);
+
+                    if (_initMethod == null)
+                    {
+                        Debug.LogWarning("[JRTI-Deferred]: Init method not found - incompatible version?");
+                        _isAvailable = false;
+                        return false;
+                    }
+
+                    _isAvailable = true;
+                    Debug.Log("[JRTI-Deferred]: Integration enabled");
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[JRTI-Deferred]: Error checking availability: {ex.Message}");
+                    _isAvailable = false;
+                    return false;
+                }
+            }
+        }
+
+        public static void ApplyToCamera(Camera camera, int renderQueue = 15)
+        {
+            if (!IsAvailable || camera == null)
+                return;
+
+            try
+            {
+                camera.renderingPath = RenderingPath.DeferredShading;
+
+                var existingComponent = camera.gameObject.GetComponent(_forwardRenderingCompatibilityType);
+                if (existingComponent != null)
+                {
+                    Debug.Log($"[JRTI-Deferred]: ForwardRenderingCompatibility already exists on {camera.name}");
+                    return;
+                }
+
+                var component = camera.gameObject.AddComponent(_forwardRenderingCompatibilityType);
+
+                if (component != null && _initMethod != null)
+                {
+                    _initMethod.Invoke(component, new object[] { renderQueue });
+                    Debug.Log($"[JRTI-Deferred]: Applied deferred rendering to {camera.name} (queue: {renderQueue})");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[JRTI-Deferred]: Failed to apply to {camera.name}: {ex.Message}");
+
+                try
+                {
+                    camera.renderingPath = RenderingPath.Forward;
+                    var component = camera.gameObject.GetComponent(_forwardRenderingCompatibilityType);
+                    if (component != null)
+                        UnityEngine.Object.Destroy(component);
+                }
+                catch { }
+            }
+        }
+
+        public static void RemoveFromCamera(Camera camera)
+        {
+            if (camera == null)
+                return;
+
+            try
+            {
+                camera.renderingPath = RenderingPath.Forward;
+
+                if (_forwardRenderingCompatibilityType != null)
+                {
+                    var component = camera.gameObject.GetComponent(_forwardRenderingCompatibilityType);
+                    if (component != null)
+                    {
+                        UnityEngine.Object.Destroy(component);
+                        Debug.Log($"[JRTI-Deferred]: Removed from {camera.name}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[JRTI-Deferred]: Error removing from {camera.name}: {ex.Message}");
+            }
+        }
+
+        public static string GetDiagnosticInfo(Camera camera)
+        {
+            if (!IsAvailable || camera == null)
+                return "Deferred not available";
+
+            var info = $"Deferred Integration for {camera.name}:\n";
+            info += $"- Rendering path: {camera.renderingPath}\n";
+
+            if (_forwardRenderingCompatibilityType != null)
+            {
+                var component = camera.GetComponent(_forwardRenderingCompatibilityType);
+                info += component != null
+                    ? "- ForwardRenderingCompatibility: Present\n"
+                    : "- ForwardRenderingCompatibility: Missing\n";
+            }
+
+            return info;
+        }
+    }
+}
