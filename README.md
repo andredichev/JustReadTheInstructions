@@ -22,8 +22,6 @@
 </p>
 
 ---
-this is to be removed before release, but don't forget to add little shield icons (rel, ver...)
-and also linking kofi or sum, tips would be great :3
 
 > [!WARNING]
 > **JRTI is currently an experimental public release / proof of concept.**
@@ -127,4 +125,4 @@ JustReadTheInstructions\Distribution\GameData\JustReadTheInstructions\
 To install the development build, copy the produced `JustReadTheInstructions` folder into your KSP `GameData` directory.
 
 ## License
-MIT
+This project is licensed under the MIT License.
