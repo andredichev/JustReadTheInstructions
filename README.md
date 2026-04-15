@@ -3,14 +3,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/RELMYMathieu/JustReadTheInstructions/releases/latest">
-    <img src="https://img.shields.io/badge/Download-Latest%20Release-blue" alt="Download Latest Release">
-  </a>
-  <img src="https://img.shields.io/badge/KSP-1.12.x-4c9cff" alt="KSP Version">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
-  <a href="https://ko-fi.com/relmymathieu">
-    <img src="https://img.shields.io/badge/Support-Ko--fi-ff5f5f?logo=ko-fi&logoColor=white" alt="Support on Ko-fi">
-  </a>
+    <a href="https://ko-fi.com/relmymathieu"><img src="https://img.shields.io/badge/ko--fi-support-ff5f5f.svg?style=flat&logo=ko-fi&logoColor=white" alt="Ko-fi"/></a>
+    <a href="https://github.com/RELMYMathieu/JustReadTheInstructions/releases"><img src="https://img.shields.io/github/downloads/RELMYMathieu/JustReadTheInstructions/total.svg?style=flat&logo=github&logoColor=white" alt="Total downloads" /></a>
+    <a href="https://github.com/RELMYMathieu/JustReadTheInstructions/releases/latest"><img src="https://img.shields.io/github/release/RELMYMathieu/JustReadTheInstructions.svg?style=flat&logo=github&logoColor=white" alt="Latest release" /></a>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-97ca00.svg?style=flat&logoColor=white" alt="MIT License" /></a>
 </p>
 
 <p align="center">
