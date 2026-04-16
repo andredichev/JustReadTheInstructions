@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## Web UI Recording (Beta 2)
+## Web UI Recording [2.0.0] (Beta 2) - 2026-04-17
 
 ### Added
 - Camera feed recording from the browser via the Record button on each camera card
@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Snapshot polling interval raised to 10 s (was 2 s) and snapshot interest window reduced to 3 s, so cameras sleep between polls rather than staying hot continuously
 - Heartbeat and server-side session management are skipped entirely for remote (local-save) recordings
 
-## Web UI Recording [2.0.0] (Beta 1)
+## Web UI Recording [2.0.0] (Beta 1) - 2026-04-16
 
 ### Added
 - Basic recording support in the web UI (experimental, may be buggy)
