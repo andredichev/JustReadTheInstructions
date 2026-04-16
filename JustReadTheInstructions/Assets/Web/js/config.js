@@ -1,4 +1,4 @@
-export const SNAPSHOT_REFRESH_MS = 2000;
+export const SNAPSHOT_REFRESH_MS = 10000;
 export const CAMERA_SYNC_MS = 5000;
 export const LOS_DELAY_MS = 3000;
 export const VIEWER_STATUS_POLL_MS = 1000;

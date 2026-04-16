@@ -17,7 +17,6 @@ import { getSettings } from './recorder-settings.js';
 const MIME_CANDIDATES = [
     'video/mp4;codecs=avc1',
     'video/mp4',
-    'video/x-matroska;codecs=avc1',
     'video/webm;codecs=vp9',
     'video/webm;codecs=vp8',
     'video/webm',
@@ -50,7 +49,6 @@ function getExtensionForMime(mime) {
     if (!mime) return 'webm';
     const lower = mime.toLowerCase();
     if (lower.includes('mp4')) return 'mp4';
-    if (lower.includes('matroska')) return 'mkv';
     return 'webm';
 }
 
@@ -65,15 +63,39 @@ function buildSessionId(cameraId) {
     return `cam${cameraId}-${Date.now().toString(36)}-${rand}`;
 }
 
+async function saveLocalBlob(blob, filename) {
+    if ('showSaveFilePicker' in window) {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: filename,
+                types: [{ accept: { [blob.type]: [] } }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            return;
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+        }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
 export function isRecordingSupported() {
     return pickMimeType() !== null && typeof HTMLCanvasElement.prototype.captureStream === 'function';
 }
 
 export class CameraRecorder {
-    constructor({ cameraId, cameraName, streamUrl, onStateChange }) {
+    constructor({ cameraId, cameraName, streamUrl, isLocal = true, onStateChange }) {
         this.cameraId = cameraId;
         this.cameraName = cameraName;
         this.streamUrl = streamUrl;
+        this.isLocal = isLocal;
         this.onStateChange = onStateChange || (() => { });
 
         this.state = 'idle';
@@ -95,6 +117,7 @@ export class CameraRecorder {
         this._finalizePromise = null;
         this._aborted = false;
         this._heartbeatTimer = null;
+        this._localChunks = null;
     }
 
     get isActive() {
@@ -115,6 +138,7 @@ export class CameraRecorder {
         this.bytesUploaded = 0;
         this._aborted = false;
         this.startedAt = Date.now();
+        if (!this.isLocal) this._localChunks = [];
         this._setState('recording');
         this._startCanvasPump();
     }
@@ -128,7 +152,7 @@ export class CameraRecorder {
         }
         this.pausedAt = Date.now();
         this._setState('paused');
-        this._startHeartbeat();
+        if (this.isLocal) this._startHeartbeat();
     }
 
     resume() {
@@ -248,6 +272,14 @@ export class CameraRecorder {
         if (!blob || blob.size === 0) return;
         if (this._aborted) return;
 
+        this.bytesUploaded += blob.size;
+
+        if (!this.isLocal) {
+            this._localChunks.push(blob);
+            this._notify();
+            return;
+        }
+
         const sessionId = this._sessionId;
         const filename = this._filename;
 
@@ -255,7 +287,6 @@ export class CameraRecorder {
             if (this._aborted) return;
             try {
                 await uploadRecordingChunk(sessionId, filename, blob);
-                this.bytesUploaded += blob.size;
                 this._notify();
             } catch (err) {
                 console.error('[JRTI] chunk upload failed', err);
@@ -277,6 +308,12 @@ export class CameraRecorder {
                         this._mediaRecorder.addEventListener('stop', resolve, { once: true });
                         try { this._mediaRecorder.stop(); } catch { resolve(); }
                     });
+                }
+
+                if (!this.isLocal) {
+                    const blob = new Blob(this._localChunks, { type: this._mimeType });
+                    await saveLocalBlob(blob, filename);
+                    return;
                 }
 
                 await this._pendingUploads;
@@ -307,7 +344,7 @@ export class CameraRecorder {
             }
         } catch { }
 
-        abortRecording(sessionId, filename);
+        if (this.isLocal) abortRecording(sessionId, filename);
 
         this._cleanup();
         this._setState('idle');
@@ -319,6 +356,7 @@ export class CameraRecorder {
     }
 
     emergencyFinalize() {
+        if (!this.isLocal) return;
         if (this.state === 'idle' || !this._sessionId) return;
         this._aborted = true;
         this._stopHeartbeat();
@@ -365,6 +403,7 @@ export class CameraRecorder {
         this._mediaRecorder = null;
         this._canvas = null;
         this._ctx = null;
+        this._localChunks = null;
     }
 
     _setState(state, extras = {}) {

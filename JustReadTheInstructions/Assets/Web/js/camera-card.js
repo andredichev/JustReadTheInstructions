@@ -3,6 +3,7 @@ import {
     LOS_DELAY_MS,
     LOS_OVERLAY_HTML,
     WAITING_OVERLAY_HTML,
+    API,
 } from './config.js';
 import { copyToClipboard } from './clipboard.js';
 import { checkStatus } from './api.js';
@@ -129,7 +130,18 @@ export class CameraCard {
             setTimeout(() => { copyBtn.textContent = 'Copy URL'; }, 1500);
         });
 
-        actions.append(watchBtn, recBtn, copyBtn);
+        const rawCopyBtn = document.createElement('button');
+        rawCopyBtn.type = 'button';
+        rawCopyBtn.className = 'btn';
+        rawCopyBtn.textContent = 'Copy Raw';
+        rawCopyBtn.title = 'For OBS and other external feeds';
+        rawCopyBtn.addEventListener('click', async () => {
+            const ok = await copyToClipboard(location.origin + API.stream(this.id));
+            rawCopyBtn.textContent = ok ? 'Copied!' : 'Manual Copy';
+            setTimeout(() => { rawCopyBtn.textContent = 'Copy Raw'; }, 1500);
+        });
+
+        actions.append(watchBtn, recBtn, copyBtn, rawCopyBtn);
         info.append(name, actions);
 
         const footer = document.createElement('div');
@@ -204,10 +216,13 @@ export class CameraCard {
             old.abandon();
         }
 
+        const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
         this.recorder = new CameraRecorder({
             cameraId: this.id,
             cameraName: this.name,
             streamUrl: `/camera/${this.id}/stream`,
+            isLocal,
             onStateChange: (s) => this._onRecorderState(s),
         });
 

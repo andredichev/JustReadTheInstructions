@@ -90,6 +90,9 @@ namespace JustReadTheInstructions
         public bool IsStreaming(int cameraId)
             => _states.TryGetValue(cameraId, out var s) && s.MjpegClientCount > 0;
 
+        public bool HasActiveClients(int cameraId)
+            => _states.TryGetValue(cameraId, out var s) && s.HasActiveClients;
+
         public void TryCaptureFrame(int cameraId, RenderTexture renderTexture)
         {
             if (!_states.TryGetValue(cameraId, out var state) || !state.HasActiveClients)
@@ -728,7 +731,7 @@ namespace JustReadTheInstructions
 
         internal sealed class CameraStreamState : IDisposable
         {
-            private const float SnapshotInterestDuration = 5f;
+            private const float SnapshotInterestDuration = 3f;
 
             public byte[] LatestJpeg;
             public readonly object JpegLock = new object();

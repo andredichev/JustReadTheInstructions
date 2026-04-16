@@ -223,7 +223,8 @@ namespace JustReadTheInstructions
 
             _frameCount++;
 
-            bool shouldRender = (_frameCount % (JRTISettings.RenderEveryOtherFrame ? 2 : 1)) == 0;
+            bool hasViewers = JRTIStreamServer.Instance?.HasActiveClients(InstanceId) ?? false;
+            bool shouldRender = hasViewers && (_frameCount % (JRTISettings.RenderEveryOtherFrame ? 2 : 1)) == 0;
             SetCamerasEnabled(shouldRender);
 
             if (!shouldRender) return;
