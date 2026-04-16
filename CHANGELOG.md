@@ -11,9 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Web UI Recording [2.0.0] (Beta 2) - 2026-04-17
 
 ### Added
-- Camera feed recording from the browser via the Record button on each camera card
-- Recordings upload in chunks as they go — partial recordings are kept if the browser closes mid-session
-- Loss-of-signal behaviour is configurable per-session: Auto-save (default), Pause, or Discard
 - Remote viewers (non-localhost) get a local Save-As dialog instead of uploading to the KSP machine
 - "Copy URL" copies the viewer page link; new "Copy Raw" button copies the bare MJPEG feed URL for OBS and external tools (hover tooltip included)
 
