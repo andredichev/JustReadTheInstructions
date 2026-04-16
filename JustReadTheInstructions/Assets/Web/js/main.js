@@ -5,6 +5,10 @@ import { mountSettingsUI } from './settings-ui.js';
 
 const cards = new Map();
 
+const liveContainer = document.getElementById('cameras-live');
+const offlineSection = document.getElementById('cameras-offline-section');
+const offlineContainer = document.getElementById('cameras-offline');
+
 function setStatus(id, message) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -27,30 +31,37 @@ async function sync() {
         return;
     }
 
-    setStatus('empty', cameras.length === 0
-        ? 'No cameras open. Open or stream a hull camera in KSP first.'
-        : null);
-
-    const container = document.getElementById('cameras');
     const incomingIds = new Set(cameras.map((c) => c.id));
 
     for (const [id, card] of cards) {
-        if (!incomingIds.has(id)) {
-            card.dispose();
-            cards.delete(id);
+        if (!incomingIds.has(id) && !card.destroyed) {
+            card.markDestroyed();
+            offlineContainer.appendChild(card.el);
         }
     }
 
     for (const cam of cameras) {
         const existing = cards.get(cam.id);
         if (existing) {
-            existing.update(cam);
+            if (existing.destroyed) {
+                existing.revive(cam);
+                liveContainer.appendChild(existing.el);
+            } else {
+                existing.update(cam);
+            }
         } else {
             const card = new CameraCard(cam);
             cards.set(cam.id, card);
-            container.appendChild(card.el);
+            liveContainer.appendChild(card.el);
         }
     }
+
+    const hasOffline = [...cards.values()].some(c => c.destroyed);
+    offlineSection.hidden = !hasOffline;
+
+    setStatus('empty', cameras.length === 0 && !hasOffline
+        ? 'No cameras open. Open or stream a hull camera in KSP first.'
+        : null);
 }
 
 function wireLifecycle() {

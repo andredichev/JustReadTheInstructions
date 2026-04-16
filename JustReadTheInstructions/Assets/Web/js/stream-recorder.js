@@ -91,7 +91,7 @@ export function isRecordingSupported() {
 }
 
 export class CameraRecorder {
-    constructor({ cameraId, cameraName, streamUrl, isLocal = true, onStateChange }) {
+    constructor({ cameraId, cameraName, streamUrl, isLocal = true, onStateChange, onCanvasReady }) {
         this.cameraId = cameraId;
         this.cameraName = cameraName;
         this.streamUrl = streamUrl;
@@ -118,6 +118,7 @@ export class CameraRecorder {
         this._aborted = false;
         this._heartbeatTimer = null;
         this._localChunks = null;
+        this._onCanvasReady = onCanvasReady || null;
     }
 
     get isActive() {
@@ -199,6 +200,7 @@ export class CameraRecorder {
             this._canvas.width = width;
             this._canvas.height = height;
             this._ctx = this._canvas.getContext('2d');
+            this._onCanvasReady?.(this._canvas);
 
             this._stream = this._canvas.captureStream(RECORDER_CAPTURE_FPS);
             this._mediaRecorder = new MediaRecorder(this._stream, {

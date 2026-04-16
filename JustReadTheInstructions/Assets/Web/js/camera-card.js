@@ -37,6 +37,8 @@ export class CameraCard {
         this.durationTimer = null;
         this.livenessTimer = null;
         this.recorder = null;
+        this.destroyed = false;
+        this._snapshotJitterTimer = null;
 
         this.el = this._buildDom();
         this._startSnapshotLoop();
@@ -54,12 +56,13 @@ export class CameraCard {
     }
 
     dispose() {
-        clearInterval(this.snapshotTimer);
+        this._stopSnapshotLoop();
         clearInterval(this.durationTimer);
         clearInterval(this.livenessTimer);
-        this.snapshotTimer = null;
         this.durationTimer = null;
         this.livenessTimer = null;
+        const img = this._getSnapshotImg();
+        if (img?.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
         this.recorder?.stop();
         this.el.remove();
     }
@@ -158,11 +161,21 @@ export class CameraCard {
     }
 
     _startSnapshotLoop() {
-        this._refreshSnapshot();
-        this.snapshotTimer = setInterval(() => this._refreshSnapshot(), SNAPSHOT_REFRESH_MS);
+        this._snapshotJitterTimer = setTimeout(() => {
+            this._snapshotJitterTimer = null;
+            this._refreshSnapshot();
+            this.snapshotTimer = setInterval(() => this._refreshSnapshot(), SNAPSHOT_REFRESH_MS);
+        }, Math.random() * SNAPSHOT_REFRESH_MS);
     }
 
-    _refreshSnapshot() {
+    _stopSnapshotLoop() {
+        clearTimeout(this._snapshotJitterTimer);
+        this._snapshotJitterTimer = null;
+        clearInterval(this.snapshotTimer);
+        this.snapshotTimer = null;
+    }
+
+    async _refreshSnapshot() {
         if (this.loadingSnapshot) return;
         if (this.recorder && this.recorder.state !== 'idle') return;
 
@@ -170,17 +183,19 @@ export class CameraCard {
         if (!img) return;
 
         this.loadingSnapshot = true;
-        const next = new Image();
-        next.onload = () => {
-            img.src = next.src;
+        try {
+            const res = await fetch(`${this.snapshotBaseUrl}?t=${Date.now()}`);
+            if (!res.ok) throw new Error();
+            const blob = await res.blob();
+            const prev = img.src;
+            img.src = URL.createObjectURL(blob);
+            if (prev.startsWith('blob:')) URL.revokeObjectURL(prev);
             this._markOnline();
-            this.loadingSnapshot = false;
-        };
-        next.onerror = () => {
+        } catch {
             this._markOffline();
+        } finally {
             this.loadingSnapshot = false;
-        };
-        next.src = `${this.snapshotBaseUrl}?t=${Date.now()}`;
+        }
     }
 
     _markOnline() {
@@ -199,6 +214,23 @@ export class CameraCard {
             overlay.innerHTML = LOS_OVERLAY_HTML;
         }
         this.recorder?.handleSignalLost();
+    }
+
+    revive(cam) {
+        this.destroyed = false;
+        this.el.classList.remove('destroyed');
+        this.update(cam);
+        this._startSnapshotLoop();
+    }
+
+    markDestroyed() {
+        this.destroyed = true;
+        this._stopSnapshotLoop();
+        this.el.classList.add('offline', 'destroyed');
+        const overlay = this.el.querySelector('.offline-overlay');
+        if (overlay) overlay.innerHTML = LOS_OVERLAY_HTML;
+        const watchBtn = this.el.querySelector('[data-role="watch"]');
+        if (watchBtn) watchBtn.className = 'btn watch-disabled';
     }
 
     _toggleRecording() {
@@ -224,6 +256,7 @@ export class CameraCard {
             streamUrl: `/camera/${this.id}/stream`,
             isLocal,
             onStateChange: (s) => this._onRecorderState(s),
+            onCanvasReady: (canvas) => this._mountRecorderCanvas(canvas),
         });
 
         this.recorder.start();
@@ -282,6 +315,7 @@ export class CameraCard {
             statusEl.textContent = 'Idle';
             this._clearDurationTimer();
             this._stopLivenessPolling();
+            this._unmountRecorderCanvas();
             this._getSnapshotImg().src = `${this.snapshotBaseUrl}?t=${Date.now()}`;
         }
 
@@ -298,6 +332,20 @@ export class CameraCard {
             if (this.recorder.state !== 'recording') return;
             statusEl.textContent = `● Recording ${formatDuration(Date.now() - startedAt)}`;
         }, 1000);
+    }
+
+    _mountRecorderCanvas(canvas) {
+        canvas.className = 'rec-live-preview';
+        const img = this._getSnapshotImg();
+        img.hidden = true;
+        img.closest('.preview').insertBefore(canvas, img);
+    }
+
+    _unmountRecorderCanvas() {
+        const canvas = this.el.querySelector('.rec-live-preview');
+        if (!canvas) return;
+        canvas.remove();
+        this._getSnapshotImg().hidden = false;
     }
 
     _clearDurationTimer() {
