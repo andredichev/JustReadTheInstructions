@@ -18,10 +18,10 @@ function setStatus(id, message) {
     else { el.classList.remove('visible'); }
 }
 
-function persistKnownCameras(liveCameras) {
+function persistKnownCameras() {
     try {
         localStorage.setItem(KNOWN_CAMERAS_KEY, JSON.stringify(
-            liveCameras.map(({ id, name }) => ({ id, name }))
+            [...cards.values()].map(({ id, name }) => ({ id, name }))
         ));
     } catch { }
 }
@@ -57,8 +57,6 @@ async function sync() {
         return;
     }
 
-    persistKnownCameras(cameras);
-
     const incomingIds = new Set(cameras.map((c) => c.id));
 
     for (const [id, card] of cards) {
@@ -83,6 +81,8 @@ async function sync() {
             liveContainer.appendChild(card.el);
         }
     }
+
+    persistKnownCameras();
 
     const hasOffline = [...cards.values()].some(c => c.destroyed);
     offlineSection.hidden = !hasOffline;
