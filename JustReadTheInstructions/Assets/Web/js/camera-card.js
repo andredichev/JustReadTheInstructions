@@ -24,6 +24,55 @@ function formatDuration(ms) {
     return `${mm}:${ss}`;
 }
 
+function makeButton({ label, className = 'btn', role, title, onClick }) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = className;
+    btn.textContent = label;
+    if (role) btn.dataset.role = role;
+    if (title) btn.title = title;
+    if (onClick) btn.addEventListener('click', onClick);
+    return btn;
+}
+
+function makeCopyButton({ label, title, getText }) {
+    const btn = makeButton({ label, title });
+    btn.addEventListener('click', async () => {
+        const ok = await copyToClipboard(getText());
+        btn.textContent = ok ? 'Copied!' : 'Manual Copy';
+        setTimeout(() => { btn.textContent = label; }, 1500);
+    });
+    return btn;
+}
+
+const REC_STATES = {
+    recording: {
+        cardClass: true,
+        statusClass: 'recording',
+        recBtn: { text: '■ Stop', active: true, disabled: false },
+        pauseBtn: { hidden: false, text: '⏸ Pause' },
+    },
+    paused: {
+        cardClass: true,
+        statusClass: 'paused',
+        status: '⏸ Paused',
+        recBtn: { text: '■ Stop', active: true, disabled: false },
+        pauseBtn: { hidden: false, text: '▶ Resume' },
+    },
+    finalizing: {
+        cardClass: false,
+        status: 'Saving...',
+        recBtn: { text: 'Saving...', active: false, disabled: true },
+        pauseBtn: { hidden: true },
+    },
+    idle: {
+        cardClass: false,
+        status: 'Idle',
+        recBtn: { text: '● Record', active: false, disabled: false },
+        pauseBtn: { hidden: true },
+    },
+};
+
 export class CameraCard {
     constructor(cam) {
         this.id = cam.id;
@@ -40,6 +89,7 @@ export class CameraCard {
         this.recorder = null;
         this.destroyed = false;
         this._snapshotJitterTimer = null;
+        this._lastRecordingBytes = 0;
 
         this.el = this._buildDom();
         this._startSnapshotLoop();
@@ -72,11 +122,32 @@ export class CameraCard {
         this.recorder?.emergencyFinalize();
     }
 
+    revive(cam) {
+        this.destroyed = false;
+        this.el.classList.remove('destroyed');
+        this.update(cam);
+        this._startSnapshotLoop();
+    }
+
+    markDestroyed() {
+        this.destroyed = true;
+        this._stopSnapshotLoop();
+        this.el.classList.add('offline', 'destroyed');
+        const overlay = this.el.querySelector('.offline-overlay');
+        if (overlay) overlay.innerHTML = LOS_OVERLAY_HTML;
+        const watchBtn = this.el.querySelector('[data-role="watch"]');
+        if (watchBtn) watchBtn.className = 'btn watch-disabled';
+    }
+
     _buildDom() {
         const card = document.createElement('div');
         card.className = 'camera-card offline';
         card.dataset.id = this.id;
+        card.append(this._buildPreview(), this._buildInfo(), this._buildFooter());
+        return card;
+    }
 
+    _buildPreview() {
         const preview = document.createElement('div');
         preview.className = 'preview';
 
@@ -93,7 +164,10 @@ export class CameraCard {
         recBadge.innerHTML = '<span class="rec-dot"></span><span data-role="rec-label">REC</span>';
 
         preview.append(img, offlineOverlay, recBadge);
+        return preview;
+    }
 
+    _buildInfo() {
         const info = document.createElement('div');
         info.className = 'camera-info';
 
@@ -111,58 +185,47 @@ export class CameraCard {
         watchBtn.textContent = 'Watch';
         watchBtn.dataset.role = 'watch';
 
-        const recBtn = document.createElement('button');
-        recBtn.type = 'button';
-        recBtn.className = 'btn rec';
-        recBtn.textContent = '● Record';
-        recBtn.dataset.role = 'record';
-        recBtn.addEventListener('click', () => this._toggleRecording());
+        const recBtn = makeButton({
+            label: '● Record',
+            className: 'btn rec',
+            role: 'record',
+            onClick: () => this._toggleRecording(),
+        });
         if (!isRecordingSupported()) {
             recBtn.disabled = true;
+            recBtn.classList.add('btn-unsupported');
             recBtn.title = 'Recording not supported in this browser';
-            recBtn.style.opacity = '0.4';
-            recBtn.style.pointerEvents = 'none';
         }
 
-        const copyBtn = document.createElement('button');
-        copyBtn.type = 'button';
-        copyBtn.className = 'btn';
-        copyBtn.textContent = 'Copy URL';
-        copyBtn.addEventListener('click', async () => {
-            const ok = await copyToClipboard(location.origin + this.streamUrl);
-            copyBtn.textContent = ok ? 'Copied!' : 'Manual Copy';
-            setTimeout(() => { copyBtn.textContent = 'Copy URL'; }, 1500);
+        const pauseBtn = makeButton({
+            label: '⏸ Pause',
+            role: 'pause',
+            onClick: () => this._togglePause(),
         });
-
-        const rawCopyBtn = document.createElement('button');
-        rawCopyBtn.type = 'button';
-        rawCopyBtn.className = 'btn';
-        rawCopyBtn.textContent = 'Copy Raw';
-        rawCopyBtn.title = 'For OBS and other external feeds';
-        rawCopyBtn.addEventListener('click', async () => {
-            const ok = await copyToClipboard(location.origin + API.stream(this.id));
-            rawCopyBtn.textContent = ok ? 'Copied!' : 'Manual Copy';
-            setTimeout(() => { rawCopyBtn.textContent = 'Copy Raw'; }, 1500);
-        });
-
-        const pauseBtn = document.createElement('button');
-        pauseBtn.type = 'button';
-        pauseBtn.className = 'btn';
-        pauseBtn.textContent = '⏸ Pause';
-        pauseBtn.dataset.role = 'pause';
         pauseBtn.hidden = true;
-        pauseBtn.addEventListener('click', () => this._togglePause());
+
+        const copyBtn = makeCopyButton({
+            label: 'Copy URL',
+            getText: () => location.origin + this.streamUrl,
+        });
+
+        const rawCopyBtn = makeCopyButton({
+            label: 'Copy Raw',
+            title: 'For OBS and other external feeds',
+            getText: () => location.origin + API.stream(this.id),
+        });
 
         actions.append(watchBtn, recBtn, pauseBtn, copyBtn, rawCopyBtn);
         info.append(name, actions);
+        return info;
+    }
 
+    _buildFooter() {
         const footer = document.createElement('div');
         footer.className = 'camera-footer';
         footer.innerHTML = '<span class="rec-status" data-role="rec-status">Idle</span>' +
             '<span class="rec-size" data-role="rec-size"></span>';
-
-        card.append(preview, info, footer);
-        return card;
+        return footer;
     }
 
     _getSnapshotImg() {
@@ -234,23 +297,6 @@ export class CameraCard {
         else if (this.recorder?.state === 'paused') this.recorder.resume();
     }
 
-    revive(cam) {
-        this.destroyed = false;
-        this.el.classList.remove('destroyed');
-        this.update(cam);
-        this._startSnapshotLoop();
-    }
-
-    markDestroyed() {
-        this.destroyed = true;
-        this._stopSnapshotLoop();
-        this.el.classList.add('offline', 'destroyed');
-        const overlay = this.el.querySelector('.offline-overlay');
-        if (overlay) overlay.innerHTML = LOS_OVERLAY_HTML;
-        const watchBtn = this.el.querySelector('[data-role="watch"]');
-        if (watchBtn) watchBtn.className = 'btn watch-disabled';
-    }
-
     _toggleRecording() {
         if (this.recorder?.isActive) {
             this.recorder.stop();
@@ -286,11 +332,8 @@ export class CameraCard {
         this.livenessTimer = setInterval(async () => {
             if (!this.recorder?.isActive) return;
             const { ok, status } = await checkStatus(this.id);
-            if (status === 404 || !ok) {
-                this._markOffline();
-            } else {
-                this._markOnline();
-            }
+            if (status === 404 || !ok) this._markOffline();
+            else this._markOnline();
         }, SNAPSHOT_REFRESH_MS);
     }
 
@@ -301,52 +344,49 @@ export class CameraCard {
     }
 
     _onRecorderState({ state, bytesUploaded, startedAt }) {
+        const spec = REC_STATES[state] ?? REC_STATES.idle;
         const card = this.el;
-        const btn = card.querySelector('[data-role="record"]');
+        const recBtn = card.querySelector('[data-role="record"]');
         const pauseBtn = card.querySelector('[data-role="pause"]');
         const statusEl = card.querySelector('[data-role="rec-status"]');
         const sizeEl = card.querySelector('[data-role="rec-size"]');
 
-        card.classList.toggle('recording', state === 'recording' || state === 'paused');
+        card.classList.toggle('recording', spec.cardClass);
         statusEl?.classList.remove('recording', 'paused');
+        if (spec.statusClass) statusEl?.classList.add(spec.statusClass);
+
+        recBtn.textContent = spec.recBtn.text;
+        recBtn.classList.toggle('active', spec.recBtn.active);
+        recBtn.disabled = spec.recBtn.disabled;
+
+        pauseBtn.hidden = spec.pauseBtn.hidden;
+        if (!spec.pauseBtn.hidden) pauseBtn.textContent = spec.pauseBtn.text;
 
         if (state === 'recording') {
-            btn.classList.add('active');
-            btn.textContent = '■ Stop';
-            pauseBtn.hidden = false;
-            pauseBtn.textContent = '⏸ Pause';
-            statusEl.classList.add('recording');
             statusEl.textContent = `● Recording ${formatDuration(Date.now() - startedAt)}`;
             this._ensureDurationTimer(startedAt);
-        } else if (state === 'paused') {
-            btn.classList.add('active');
-            btn.textContent = '■ Stop';
-            pauseBtn.hidden = false;
-            pauseBtn.textContent = '▶ Resume';
-            statusEl.classList.add('paused');
-            statusEl.textContent = '⏸ Paused';
-            this._clearDurationTimer();
-        } else if (state === 'finalizing') {
-            btn.disabled = true;
-            btn.textContent = 'Saving...';
-            pauseBtn.hidden = true;
-            statusEl.textContent = 'Saving...';
-            this._clearDurationTimer();
         } else {
-            btn.classList.remove('active');
-            btn.disabled = false;
-            btn.textContent = '● Record';
-            pauseBtn.hidden = true;
-            statusEl.textContent = 'Idle';
+            statusEl.textContent = spec.status;
             this._clearDurationTimer();
+        }
+
+        if (state === 'idle') {
             this._stopLivenessPolling();
             this._unmountRecorderCanvas();
             this._getSnapshotImg().src = `${this.snapshotBaseUrl}?t=${Date.now()}`;
         }
 
-        if (sizeEl) {
-            sizeEl.textContent = bytesUploaded > 0 ? formatBytes(bytesUploaded) : '';
-        }
+        this._updateSizeDisplay(sizeEl, state, bytesUploaded);
+    }
+
+    _updateSizeDisplay(sizeEl, state, bytesUploaded) {
+        if (!sizeEl) return;
+
+        const active = state === 'recording' || state === 'paused' || state === 'finalizing';
+        if (active) this._lastRecordingBytes = bytesUploaded;
+
+        const bytes = active ? bytesUploaded : this._lastRecordingBytes;
+        sizeEl.textContent = bytes > 0 ? `LAST RECORDING SIZE = ${formatBytes(bytes)}` : '';
     }
 
     _ensureDurationTimer(startedAt) {

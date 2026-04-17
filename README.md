@@ -38,6 +38,8 @@
 
 * View **Hullcam VDS** camera feeds in a web browser
 * Externalize in-game camera views outside the main game window
+* Record camera feeds from the web UI (locally on the KSP host, or Save-As on remote clients) (!! experimental !!)
+* Grab the raw MJPEG feed URL for OBS or other external tools
 
 ## Screenshot
 
@@ -73,6 +75,16 @@ GameData/JustReadTheInstructions/Web/images/los.png
 
 > [!CAUTION]
 > Editing files in the `Web` folder is not supported and may break the mod's functionality.
+
+## Known Issues
+
+The `2.0.0` line is still in beta. A few rough edges are tracked but not yet fixed:
+
+* **Scrubbing recorded files is unreliable.** The footage itself is intact, but seeking inside the resulting `.webm` / `.mp4` can jump around, show heavy artifacting, show the wrong duration, or freeze briefly. This is a limitation of how the browser's `MediaRecorder` writes chunks straight to disk, as the final file has no seek index. A post-finalize remux pass is planned. In the meantime, playing the file end-to-end works fine; for clean scrubbing, re-encode once through ffmpeg or VLC.
+* **Odd reflection/shadow artifact on planets.** With Scatterer and/or EVE installed, looking at Kerbin or the Mun through a JRTI camera can render a noticable secondary reflection or shadow that isn't present on the main game camera. The scene lighting and actual shadows render correctly - this appears to be a probe or hook tied to the main camera's frustum bleeding into the mod camera. Under investigation.
+
+If you hit something not listed here, please open an issue with your log file attached.
+Additionally, being issue with "Bug:" in the title, it will help me it triage faster.
 
 ## For Developers
 
