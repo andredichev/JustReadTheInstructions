@@ -13,6 +13,7 @@ namespace JustReadTheInstructions
     public partial class JRTIStreamServer : MonoBehaviour
     {
         public static JRTIStreamServer Instance { get; private set; }
+        public string LaunchId { get; private set; }
 
         private HttpListener _listener;
         private Thread _listenerThread;
@@ -39,6 +40,7 @@ namespace JustReadTheInstructions
         {
             if (Instance != null) { Destroy(this); return; }
             Instance = this;
+            LaunchId = Guid.NewGuid().ToString("N");
             EnsureRecordingsDirectory();
         }
 
@@ -238,6 +240,7 @@ namespace JustReadTheInstructions
 
                 if (trimmed == "" || trimmed == "/index.html") { ServeStaticFile(ctx, "index.html"); return; }
                 if (trimmed == "/cameras") { ServeCameraList(ctx); return; }
+                if (trimmed == "/session") { ServeText(ctx, $"{{\"launchId\":\"{LaunchId}\"}}", "application/json"); return; }
                 if (trimmed.StartsWith("/recordings/")) { HandleRecordingEndpoint(ctx, trimmed); return; }
                 if (trimmed.StartsWith("/camera/")) { ServeCameraEndpoint(ctx, trimmed); return; }
 

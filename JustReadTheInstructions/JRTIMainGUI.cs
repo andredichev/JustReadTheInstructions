@@ -156,6 +156,17 @@ namespace JustReadTheInstructions
                 }
             }
 
+            if (_cachedAvailableCameras.Count > 1)
+            {
+                line++;
+                if (GUI.Button(
+                    new Rect(LeftIndent, ContentTop + line * EntryHeight, ContentWidth, EntryHeight),
+                    "Stream All", _buttonStyle))
+                {
+                    StreamAllCameras();
+                }
+            }
+
             line++;
             if (GUI.Button(
                 new Rect(LeftIndent, ContentTop + line * EntryHeight, ContentWidth, EntryHeight),
@@ -180,6 +191,14 @@ namespace JustReadTheInstructions
                 {
                     HullCameraManager.Instance?.CloseAllCameras();
                 }
+            }
+
+            line++;
+            if (GUI.Button(
+                new Rect(LeftIndent, ContentTop + line * EntryHeight, ContentWidth, EntryHeight),
+                "Settings", _buttonStyle))
+            {
+                JRTISettingsGUI.Instance?.Toggle();
             }
 
             line++;
@@ -220,6 +239,15 @@ namespace JustReadTheInstructions
             }
 
             GUI.color = Color.white;
+        }
+
+        private void StreamAllCameras()
+        {
+            foreach (var camera in _cachedAvailableCameras)
+            {
+                if (camera == null || camera.vessel == null) continue;
+                HullCameraManager.Instance?.StreamCamera(camera);
+            }
         }
 
         private void ClampToScreen()

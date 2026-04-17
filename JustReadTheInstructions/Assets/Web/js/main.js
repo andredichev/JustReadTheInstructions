@@ -4,6 +4,7 @@ import { CameraCard } from './camera-card.js';
 import { mountSettingsUI } from './settings-ui.js';
 
 const KNOWN_CAMERAS_KEY = 'jrti-known-cameras';
+const LAUNCH_ID_KEY = 'jrti-launch-id';
 
 const cards = new Map();
 
@@ -43,6 +44,19 @@ function restoreKnownCameras() {
             offlineContainer.appendChild(card.el);
         }
         offlineSection.hidden = stored.length === 0;
+    } catch { }
+}
+
+async function checkLaunchId() {
+    try {
+        const res = await fetch('/session');
+        if (!res.ok) return;
+        const { launchId } = await res.json();
+        const stored = localStorage.getItem(LAUNCH_ID_KEY);
+        if (stored !== launchId) {
+            localStorage.removeItem(KNOWN_CAMERAS_KEY);
+            localStorage.setItem(LAUNCH_ID_KEY, launchId);
+        }
     } catch { }
 }
 
@@ -100,9 +114,10 @@ function wireLifecycle() {
     window.addEventListener('beforeunload', finalize);
 }
 
-function main() {
+async function main() {
     mountSettingsUI();
     wireLifecycle();
+    await checkLaunchId();
     restoreKnownCameras();
     sync();
     setInterval(sync, CAMERA_SYNC_MS);
