@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Known Issues
 - Faint reflection/shadow artifact visible on Kerbin and the Mun through JRTI cameras when Scatterer and/or EVE are installed. Actual shadows render correctly, so this looks like a hook or reflection probe tied to the main camera's frustum bleeding into the mod camera. Under investigation
+- Firefox doesn't support the current MIME codecs. Thus, the recording button is greyed out.
 
 ## [v2.0.0-beta.3] Web UI Recording (Beta 3) - 2026-04-17
 
