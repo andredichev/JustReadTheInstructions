@@ -17,6 +17,10 @@ const EBML = {
     CUE_CLUSTER_POS: 0xF1,
     VOID: 0xEC,
     SEEK_HEAD: 0x114D9B74,
+    TRACKS: 0x1654AE6B,
+    TRACK_ENTRY: 0xAE,
+    TRACK_TYPE: 0x83,
+    DEFAULT_DURATION: 0x23E383,
 };
 
 function readVint(d, offset) {
@@ -111,6 +115,8 @@ function concat(...arrays) {
 function scanSegment(d, segStart, segDataStart, segDataEnd) {
     const clusters = [];
     let segInfoStart = -1, segInfoEnd = -1;
+    let tracksStart = -1, tracksEnd = -1;
+    let frameCount = 0;
     let cuesStart = -1, cuesEnd = -1;
     let seekHeadStart = -1, seekHeadEnd = -1;
     let timecodeScale = 1000000;
@@ -142,27 +148,38 @@ function scanSegment(d, segStart, segDataStart, segDataEnd) {
                 }
                 j += iR2.len + sR2.len + sR2.val;
             }
-        } else if (idR.id === EBML.CLUSTER) {
+        }
+
+        if (idR.id === EBML.TRACKS) {
+            tracksStart = eStart;
+            tracksEnd = Math.min(eEnd, d.length);
+        }
+
+        if (idR.id === EBML.CLUSTER) {
             let clusterTime = 0;
-            let j = dataStart;
-            while (j < eEnd && j < d.length) {
-                const iR2 = readId(d, j);
-                if (!iR2) break;
-                const sR2 = readSize(d, j + iR2.len);
-                if (!sR2) break;
-                if (iR2.id === EBML.CLUSTER_TIMECODE) {
+            let k = dataStart;
+            while (k < Math.min(eEnd, d.length)) {
+                const bIdR = readId(d, k);
+                if (!bIdR) break;
+                const bSzR = readSize(d, k + bIdR.len);
+                if (!bSzR) break;
+                if (bIdR.id === EBML.SIMPLE_BLOCK || bIdR.id === EBML.BLOCK) frameCount++;
+                if (bIdR.id === EBML.CLUSTER_TIMECODE) {
                     let tv = 0;
-                    for (let k = 0; k < sR2.val; k++) tv = tv * 256 + d[j + iR2.len + sR2.len + k];
+                    for (let m = 0; m < bSzR.val; m++) tv = tv * 256 + d[k + bIdR.len + bSzR.len + m];
                     clusterTime = tv;
-                    break;
                 }
-                j += iR2.len + sR2.len + sR2.val;
+                k += bIdR.len + bSzR.len + bSzR.val;
             }
             clusters.push({ pos: eStart - segDataStart, time: clusterTime, end: Math.min(eEnd, d.length) });
-        } else if (idR.id === EBML.CUES) {
+        }
+
+        if (idR.id === EBML.CUES) {
             cuesStart = eStart;
             cuesEnd = Math.min(eEnd, d.length);
-        } else if (idR.id === EBML.SEEK_HEAD) {
+        }
+
+        if (idR.id === EBML.SEEK_HEAD) {
             seekHeadStart = eStart;
             seekHeadEnd = Math.min(eEnd, d.length);
         }
@@ -170,7 +187,54 @@ function scanSegment(d, segStart, segDataStart, segDataEnd) {
         i = eEnd;
     }
 
-    return { clusters, segInfoStart, segInfoEnd, cuesStart, cuesEnd, timecodeScale, seekHeadStart, seekHeadEnd };
+    return { clusters, segInfoStart, segInfoEnd, cuesStart, cuesEnd, timecodeScale, seekHeadStart, seekHeadEnd, tracksStart, tracksEnd, frameCount };
+}
+
+function patchTracksDefaultDuration(d, tracksStart, tracksEnd, defaultDurationNs) {
+    const idR = readId(d, tracksStart);
+    const szR = readSize(d, tracksStart + idR.len);
+    const dataStart = tracksStart + idR.len + szR.len;
+
+    const durEl = buildElement(EBML.DEFAULT_DURATION, writeUint(defaultDurationNs));
+    const parts = [];
+    let j = dataStart;
+
+    while (j < tracksEnd) {
+        const eStart = j;
+        const eIdR = readId(d, j);
+        if (!eIdR) break;
+        const eSzR = readSize(d, j + eIdR.len);
+        if (!eSzR) break;
+        const eDataStart = j + eIdR.len + eSzR.len;
+        const eEnd = eDataStart + eSzR.val;
+
+        if (eIdR.id === EBML.TRACK_ENTRY) {
+            let isVideo = false;
+            let hasDur = false;
+            let k = eDataStart;
+            while (k < Math.min(eEnd, tracksEnd)) {
+                const cIdR = readId(d, k);
+                if (!cIdR) break;
+                const cSzR = readSize(d, k + cIdR.len);
+                if (!cSzR) break;
+                if (cIdR.id === EBML.TRACK_TYPE && d[k + cIdR.len + cSzR.len] === 1) isVideo = true;
+                if (cIdR.id === EBML.DEFAULT_DURATION) hasDur = true;
+                k += cIdR.len + cSzR.len + cSzR.val;
+            }
+
+            if (isVideo && !hasDur) {
+                const entryPayload = concat(d.subarray(eDataStart, Math.min(eEnd, tracksEnd)), durEl);
+                parts.push(buildElement(EBML.TRACK_ENTRY, entryPayload));
+                j = Math.min(eEnd, tracksEnd);
+                continue;
+            }
+        }
+
+        parts.push(d.subarray(eStart, Math.min(eEnd, tracksEnd)));
+        j = Math.min(eEnd, tracksEnd);
+    }
+
+    return buildElement(EBML.TRACKS, concat(...parts));
 }
 
 function buildCues(clusters, clusterShift) {
@@ -265,7 +329,9 @@ export async function fixWebm(blob) {
 
     const segDataEnd = isUnknownSize ? d.length : segDataStart + segSzR.val;
 
-    const { clusters, segInfoStart, segInfoEnd, cuesStart, cuesEnd, seekHeadStart, seekHeadEnd } = scanSegment(d, i, segDataStart, segDataEnd);
+    const { clusters, segInfoStart, segInfoEnd, cuesStart, cuesEnd,
+        seekHeadStart, seekHeadEnd, tracksStart, tracksEnd,
+        frameCount, timecodeScale } = scanSegment(d, i, segDataStart, segDataEnd);
 
     if (clusters.length === 0 || segInfoStart < 0) return blob;
 
@@ -303,12 +369,18 @@ export async function fixWebm(blob) {
 
     const hasCues = cuesStart >= 0;
     const clusterAbsStart = segDataStart + clusters[0].pos;
-
     const seekHeadSize = seekHeadStart !== -1 ? (seekHeadEnd - seekHeadStart) : 0;
     const infoSizeDiff = newInfoEl ? newInfoEl.length - (segInfoEnd - segInfoStart) : 0;
-    let cuesBeforeClustersSize = (hasCues && cuesStart < clusterAbsStart) ? (cuesEnd - cuesStart) : 0;
+    const cuesBeforeClustersSize = (hasCues && cuesStart < clusterAbsStart) ? (cuesEnd - cuesStart) : 0;
 
-    const clusterShift = infoSizeDiff - seekHeadSize - cuesBeforeClustersSize;
+    const defaultDurationNs = frameCount > 1 ? Math.round(durationTick * timecodeScale / frameCount) : 0;
+    const newTracksEl = (tracksStart !== -1 && defaultDurationNs > 0)
+        ? patchTracksDefaultDuration(d, tracksStart, tracksEnd, defaultDurationNs)
+        : null;
+
+    const tracksSizeDiff = newTracksEl ? newTracksEl.length - (tracksEnd - tracksStart) : 0;
+    const clusterShift = infoSizeDiff + tracksSizeDiff - seekHeadSize - cuesBeforeClustersSize;
+
     const cuesEl = buildCues(clusters, clusterShift);
 
     const payloadParts = [];
@@ -326,7 +398,13 @@ export async function fixWebm(blob) {
         payloadParts.push(d.subarray(segInfoEnd, cuesStart));
         payloadParts.push(d.subarray(cuesEnd, clusterAbsStart));
     } else {
-        payloadParts.push(d.subarray(segInfoEnd, clusterAbsStart));
+        if (newTracksEl && tracksStart !== -1) {
+            payloadParts.push(d.subarray(segInfoEnd, tracksStart));
+            payloadParts.push(newTracksEl);
+            payloadParts.push(d.subarray(tracksEnd, clusterAbsStart));
+        } else {
+            payloadParts.push(d.subarray(segInfoEnd, clusterAbsStart));
+        }
     }
 
     if (hasCues && cuesStart >= clusterAbsStart) {

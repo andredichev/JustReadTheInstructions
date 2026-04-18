@@ -117,8 +117,7 @@ export class CameraRecorder {
         this._mediaRecorder = null;
         this._canvas = null;
         this._ctx = null;
-        this._rafId = null;
-        this._streamImg = null;
+        this._fetchAbort = null;
         this._streamRetryTimer = null;
         this._stream = null;
         this._sessionId = null;
@@ -200,81 +199,87 @@ export class CameraRecorder {
     }
 
     _startCanvasPump() {
-        const startRecorder = () => {
-            if (this._canvas || !this._streamImg) return;
+        this._fetchAbort = new AbortController();
 
-            const width = this._streamImg.naturalWidth || 1280;
-            const height = this._streamImg.naturalHeight || 720;
-            this._canvas = document.createElement('canvas');
-            this._canvas.width = width;
-            this._canvas.height = height;
-            this._ctx = this._canvas.getContext('2d');
-            this._onCanvasReady?.(this._canvas);
+        const pump = async () => {
+            try {
+                const response = await fetch(`${this.streamUrl}?r=${Date.now()}`, {
+                    signal: this._fetchAbort.signal,
+                });
 
-            this._stream = this._canvas.captureStream(RECORDER_CAPTURE_FPS);
-            this._mediaRecorder = new MediaRecorder(this._stream, {
-                mimeType: this._mimeType,
-                videoBitsPerSecond: RECORDER_VIDEO_BPS,
-            });
+                const reader = response.body.getReader();
+                let buf = new Uint8Array(0);
 
-            this._mediaRecorder.addEventListener('dataavailable', (e) => this._onChunk(e));
-            this._mediaRecorder.addEventListener('error', () => this._emergencyStop());
-            this._mediaRecorder.start(RECORDER_CHUNK_MS);
-        };
+                const flush = async () => {
+                    while (true) {
+                        let soi = -1;
+                        for (let i = 0; i < buf.length - 1; i++) {
+                            if (buf[i] === 0xFF && buf[i + 1] === 0xD8) { soi = i; break; }
+                        }
+                        if (soi === -1) break;
 
-        const drawLoop = () => {
-            if (this.state === 'idle' || this.state === 'finalizing') {
-                this._rafId = null;
-                return;
+                        let eoi = -1;
+                        for (let i = soi + 2; i < buf.length - 1; i++) {
+                            if (buf[i] === 0xFF && buf[i + 1] === 0xD9) { eoi = i; break; }
+                        }
+                        if (eoi === -1) break;
+
+                        const frame = buf.slice(soi, eoi + 2);
+                        buf = buf.slice(eoi + 2);
+
+                        if (this.state === 'idle' || this.state === 'finalizing') break;
+
+                        const bitmap = await createImageBitmap(new Blob([frame], { type: 'image/jpeg' }));
+
+                        if (!this._canvas) {
+                            this._canvas = document.createElement('canvas');
+                            this._canvas.width = bitmap.width;
+                            this._canvas.height = bitmap.height;
+                            this._ctx = this._canvas.getContext('2d');
+                            this._ctx.drawImage(bitmap, 0, 0);
+                            this._onCanvasReady?.(this._canvas);
+                            this._stream = this._canvas.captureStream(RECORDER_CAPTURE_FPS);
+                            this._mediaRecorder = new MediaRecorder(this._stream, {
+                                mimeType: this._mimeType,
+                                videoBitsPerSecond: RECORDER_VIDEO_BPS,
+                            });
+                            this._mediaRecorder.addEventListener('dataavailable', (e) => this._onChunk(e));
+                            this._mediaRecorder.addEventListener('error', () => this._emergencyStop());
+                            this._mediaRecorder.start(RECORDER_CHUNK_MS);
+                        } else if (this._ctx) {
+                            this._ctx.drawImage(bitmap, 0, 0, this._canvas.width, this._canvas.height);
+                            this._stream?.getVideoTracks()[0]?.requestFrame?.();
+                        }
+
+                        bitmap.close();
+                    }
+                };
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const next = new Uint8Array(buf.length + value.length);
+                    next.set(buf);
+                    next.set(value, buf.length);
+                    buf = next;
+                    await flush();
+                }
+            } catch (e) {
+                if (e.name === 'AbortError') return;
+                if (this.state === 'idle' || this.state === 'finalizing') return;
+                this._streamRetryTimer = setTimeout(pump, 1000);
             }
-
-            if (this.state === 'recording' && this._ctx && this._streamImg) {
-                try {
-                    this._ctx.drawImage(this._streamImg, 0, 0, this._canvas.width, this._canvas.height);
-                } catch { }
-            }
-
-            this._rafId = requestAnimationFrame(drawLoop);
         };
 
-        const reconnect = () => {
-            if (this.state === 'idle' || this.state === 'finalizing' || !this._streamImg) return;
-            this._streamImg.src = `${this.streamUrl}?r=${Date.now()}`;
-        };
-
-        this._streamImg = new Image();
-        this._streamImg.crossOrigin = 'anonymous';
-
-        this._streamImg.onload = () => {
-            if (this.state === 'idle' || this.state === 'finalizing') return;
-            startRecorder();
-            if (this._rafId === null) {
-                this._rafId = requestAnimationFrame(drawLoop);
-            }
-        };
-
-        this._streamImg.onerror = () => {
-            if (this._streamRetryTimer !== null) clearTimeout(this._streamRetryTimer);
-            this._streamRetryTimer = setTimeout(reconnect, 1000);
-        };
-
-        reconnect();
+        pump();
     }
 
     _stopCanvasPump() {
-        if (this._rafId !== null) {
-            cancelAnimationFrame(this._rafId);
-            this._rafId = null;
-        }
+        this._fetchAbort?.abort();
+        this._fetchAbort = null;
         if (this._streamRetryTimer !== null) {
             clearTimeout(this._streamRetryTimer);
             this._streamRetryTimer = null;
-        }
-        if (this._streamImg) {
-            this._streamImg.onload = null;
-            this._streamImg.onerror = null;
-            this._streamImg.src = '';
-            this._streamImg = null;
         }
     }
 
