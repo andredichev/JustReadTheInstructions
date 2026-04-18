@@ -135,7 +135,14 @@ namespace JustReadTheInstructions
             }
             foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                try { if (prop.CanRead && prop.CanWrite) prop.SetValue(target, prop.GetValue(source)); }
+                try
+                {
+                    if (prop.CanRead && prop.CanWrite
+                        && prop.Name != "name"
+                        && prop.Name != "tag"
+                        && prop.Name != "hideFlags")
+                        prop.SetValue(target, prop.GetValue(source));
+                }
                 catch { }
             }
         }

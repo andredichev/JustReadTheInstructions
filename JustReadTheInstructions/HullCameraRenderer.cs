@@ -82,6 +82,9 @@ namespace JustReadTheInstructions
                 camera.CopyFrom(mainCam);
                 camera.depth = mainCam.depth - 0.5f;
             }
+
+            camera.useOcclusionCulling = false;
+
             camera.name = "JRTI_Near";
 
             camera.transform.parent = !string.IsNullOrEmpty(_hullCamera.cameraTransformName)
@@ -144,7 +147,11 @@ namespace JustReadTheInstructions
             {
                 camera.CopyFrom(mainScaledCam);
                 camera.transform.parent = mainScaledCam.transform;
+                camera.depth = mainScaledCam.depth - 0.5f;
             }
+
+            camera.useOcclusionCulling = false;
+
             camera.name = "JRTI_Scaled";
 
             camera.transform.localRotation = Quaternion.identity;
@@ -193,7 +200,11 @@ namespace JustReadTheInstructions
             {
                 camera.CopyFrom(mainGalaxyCam);
                 camera.transform.parent = mainGalaxyCam.transform;
+                camera.depth = mainGalaxyCam.depth - 0.5f;
             }
+
+            camera.useOcclusionCulling = false;
+
             camera.name = "JRTI_Galaxy";
 
             camera.transform.localPosition = Vector3.zero;
@@ -234,6 +245,7 @@ namespace JustReadTheInstructions
         public void Update(bool hasInGameViewer = false)
         {
             if (!IsActive || _hullCamera == null) return;
+            if (MapView.MapIsEnabled) return;
 
             _frameCount++;
 
