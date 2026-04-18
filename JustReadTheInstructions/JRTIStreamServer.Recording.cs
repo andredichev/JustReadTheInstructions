@@ -106,6 +106,8 @@ namespace JustReadTheInstructions
                     session.Dispose();
                     if (session.DisplayPath.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase))
                         FixMp4(session.DisplayPath);
+                    else if (session.DisplayPath.EndsWith(".webm", StringComparison.OrdinalIgnoreCase))
+                        FixWebm(session.DisplayPath);
                     Debug.Log($"[JRTI-Stream]: Recording saved: {session.DisplayPath} ({session.BytesWritten} bytes)");
                 }
                 catch (Exception ex) { Debug.LogError($"[JRTI-Stream]: Finalize error:\n{ex}"); }

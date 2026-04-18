@@ -122,6 +122,7 @@
 		<Compile Include="JRTIStreamServer.Http.cs" />
 		<Compile Include="JRTIStreamServer.Recording.cs" />
 		<Compile Include="JRTIStreamServer.Mp4.cs" />
+		<Compile Include="JRTIStreamServer.Webm.cs" />
 		<Compile Include="JRTIStreamServer.Types.cs" />
 		<Compile Include="JustReadTheInstructions.cs" />
 		<Compile Include="Properties\AssemblyInfo.cs" />

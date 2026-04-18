@@ -14,10 +14,13 @@ import {
 } from './api.js';
 import { getSettings } from './recorder-settings.js';
 import { fixMp4 } from './fix-mp4.js';
+import { fixWebm } from './fix-webm.js';
 
 const MIME_CANDIDATES = [
     'video/mp4;codecs=avc1',
     'video/mp4',
+    'video/webm;codecs=vp9',
+    'video/webm',
 ];
 
 function pickMimeType() {
@@ -315,7 +318,15 @@ export class CameraRecorder {
 
                 if (!this.isLocal) {
                     const raw = new Blob(this._localChunks, { type: this._mimeType });
-                    const blob = await fixMp4(raw).catch(() => raw);
+                    const mime = this._mimeType?.toLowerCase() ?? '';
+                    let blob;
+                    if (mime.includes('mp4')) {
+                        blob = await fixMp4(raw).catch(() => raw);
+                    } else if (mime.includes('webm')) {
+                        blob = await fixWebm(raw).catch(() => raw);
+                    } else {
+                        blob = raw;
+                    }
                     await saveLocalBlob(blob, filename);
                     return;
                 }
