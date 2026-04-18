@@ -120,7 +120,6 @@ namespace JustReadTheInstructions
 
             long lastClusterTime = clusters[clusters.Count - 1].time;
             long durationTicks = lastClusterTime + 33;
-            double durationSec = durationTicks * timecodeScale / 1e9;
 
             byte[] durationEl = WbBuildFloat64(0x4489, durationTicks);
 
@@ -129,8 +128,10 @@ namespace JustReadTheInstructions
             byte[] oldInfoPayload = Slice(d, segInfoStart + infoIdLen + infoSzLen, segInfoEnd);
             byte[] newInfoEl = WbBuildContainerRaw(0x1549A966, Concat(oldInfoPayload, durationEl));
 
-            byte[] cuesEl = WbBuildCues(clusters, segDataStart);
-
+            int infoSizeDelta = newInfoEl.Length - (segInfoEnd - segInfoStart);
+            byte[] cuesElPass1 = WbBuildCues(clusters, segDataStart, 0);
+            long clusterShift = infoSizeDelta + cuesElPass1.Length;
+            byte[] cuesEl = WbBuildCues(clusters, segDataStart, clusterShift);
             int firstClusterAbsPos = clusters[0].absStart;
 
             byte[] final = Concat(
@@ -151,12 +152,12 @@ namespace JustReadTheInstructions
 
         private static readonly long WbUnknownSize = unchecked((long)0x00FFFFFFFFFFFFFFL);
 
-        private static byte[] WbBuildCues(List<(int absStart, long time)> clusters, int segDataStart)
+        private static byte[] WbBuildCues(List<(int absStart, long time)> clusters, int segDataStart, long shift = 0)
         {
             var points = new List<byte[]>();
             foreach (var (absStart, time) in clusters)
             {
-                long clusterPos = absStart - segDataStart;
+                long clusterPos = Math.Max(0, absStart - segDataStart + shift);
                 byte[] trackPos = WbBuildContainerRaw(0xB7, Concat(
                     WbBuildUint(0xF7, 1),
                     WbBuildUint(0xF1, clusterPos)

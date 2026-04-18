@@ -161,18 +161,15 @@ function scanSegment(d, segStart, segDataStart, segDataEnd) {
     return { clusters, segInfoStart, segInfoEnd, cuesStart, cuesEnd, timecodeScale };
 }
 
-function buildCues(clusters, segContentOffset) {
+function buildCues(clusters, clusterShift) {
     const cuePoints = clusters.map(c => {
-        const timePay = writeUint(c.time, vintWidth(c.time));
-        const trackPay = writeUint(1, 1);
-        const adjustedPos = c.pos - segContentOffset;
-        const posPay = writeUint(adjustedPos < 0 ? 0 : adjustedPos, Math.max(1, Math.ceil(Math.log2(adjustedPos + 1) / 8)));
+        const pos = Math.max(0, c.pos + clusterShift);
         const trackPos = concat(
-            buildElement(EBML.CUE_TRACK, trackPay),
-            buildElement(EBML.CUE_CLUSTER_POS, writeUint(c.pos, 8))
+            buildElement(EBML.CUE_TRACK, writeUint(1, 1)),
+            buildElement(EBML.CUE_CLUSTER_POS, writeUint(pos, 8))
         );
         return buildElement(EBML.CUE_POINT, concat(
-            buildElement(EBML.CUE_TIME, writeUint(c.time, timePay.length)),
+            buildElement(EBML.CUE_TIME, writeUint(c.time, Math.max(1, vintWidth(c.time)))),
             buildElement(EBML.CUE_TRACK_POSITIONS, trackPos)
         ));
     });
@@ -182,7 +179,6 @@ function buildCues(clusters, segContentOffset) {
 function patchSegInfo(d, segInfoStart, segInfoEnd, duration) {
     const durationEl = buildElement(EBML.DURATION, encodeFloat64(duration));
 
-    const oldInfo = d.subarray(segInfoStart, segInfoEnd);
     const idR = readId(d, segInfoStart);
     const szR = readSize(d, segInfoStart + idR.len);
     const dataStart = segInfoStart + idR.len + szR.len;
@@ -256,20 +252,22 @@ export async function fixWebm(blob) {
 
     if (!newInfoEl && hasCues) return blob;
 
-    const cuesEl = buildCues(clusters, 0);
+    const infoSizeDelta = newInfoEl ? newInfoEl.length - (segInfoEnd - segInfoStart) : 0;
+    const tempCues = buildCues(clusters, 0);
+    const clusterShift = hasCues
+        ? infoSizeDelta + (tempCues.length - (cuesEnd - cuesStart))
+        : infoSizeDelta + tempCues.length;
+    const cuesEl = buildCues(clusters, clusterShift);
 
     const parts = [];
     parts.push(d.subarray(0, segInfoStart));
     parts.push(newInfoEl || d.subarray(segInfoStart, segInfoEnd));
-
-    const afterInfo = newInfoEl ? segInfoEnd : segInfoEnd;
-
     if (hasCues) {
-        parts.push(d.subarray(afterInfo, cuesStart));
+        parts.push(d.subarray(segInfoEnd, cuesStart));
         parts.push(cuesEl);
         parts.push(d.subarray(cuesEnd));
     } else {
-        parts.push(d.subarray(afterInfo, segDataStart + clusters[0].pos));
+        parts.push(d.subarray(segInfoEnd, segDataStart + clusters[0].pos));
         parts.push(cuesEl);
         parts.push(d.subarray(segDataStart + clusters[0].pos));
     }
