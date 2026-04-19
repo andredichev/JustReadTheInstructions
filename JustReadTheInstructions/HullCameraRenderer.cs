@@ -74,13 +74,10 @@ namespace JustReadTheInstructions
             var camObj = new GameObject("JRTI_Near_" + InstanceId);
             var camera = camObj.AddComponent<Camera>();
 
-            camera.clearFlags = CameraClearFlags.Depth;
-
             var mainCam = Camera.allCameras.FirstOrDefault(c => c.name == "Camera 00");
             if (mainCam != null)
             {
                 camera.CopyFrom(mainCam);
-                camera.depth = mainCam.depth - 0.5f;
             }
 
             camera.useOcclusionCulling = false;
@@ -140,14 +137,11 @@ namespace JustReadTheInstructions
             var camObj = new GameObject("JRTI_Scaled_" + InstanceId);
             var camera = camObj.AddComponent<Camera>();
 
-            camera.clearFlags = CameraClearFlags.Depth;
-
             var mainScaledCam = FindCameraByName("Camera ScaledSpace");
             if (mainScaledCam != null)
             {
                 camera.CopyFrom(mainScaledCam);
                 camera.transform.parent = mainScaledCam.transform;
-                camera.depth = mainScaledCam.depth - 0.5f;
             }
 
             camera.useOcclusionCulling = false;
@@ -191,7 +185,6 @@ namespace JustReadTheInstructions
             var camObj = new GameObject("JRTI_Galaxy_" + InstanceId);
             var camera = camObj.AddComponent<Camera>();
 
-            // attempt to clear camera background / flags to avoid rendering issues (!! experimental !!)
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = Color.black;
 
@@ -200,7 +193,6 @@ namespace JustReadTheInstructions
             {
                 camera.CopyFrom(mainGalaxyCam);
                 camera.transform.parent = mainGalaxyCam.transform;
-                camera.depth = mainGalaxyCam.depth - 0.5f;
             }
 
             camera.useOcclusionCulling = false;
@@ -289,7 +281,6 @@ namespace JustReadTheInstructions
             foreach (var camera in _cameras)
             {
                 if (camera == null) continue;
-                // hacking the GPU context to avoid Unity's weird renderer behaviour
                 if (enabled)
                 {
                     if (!TargetTexture.IsCreated()) TargetTexture.Create();
