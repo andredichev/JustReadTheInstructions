@@ -34,6 +34,9 @@ namespace JustReadTheInstructions
 
         private DockingCameraOverlay _dockingOverlay;
 
+        private PerCameraSunflareManager _sunflareManager;
+        private GameObject _sunflareManagerGO;
+
         public HullCameraRenderer(MuMechModuleHullCamera hullCamera)
         {
             _hullCamera = hullCamera ?? throw new ArgumentNullException(nameof(hullCamera));
@@ -76,6 +79,13 @@ namespace JustReadTheInstructions
             SetupNearCamera();
             SetupScaledCamera();
             SetupGalaxyCamera();
+
+            if (ScattererIntegration.IsAvailable)
+            {
+                _sunflareManagerGO = new GameObject("JRTI_SunFlareManager_" + InstanceId);
+                _sunflareManager = _sunflareManagerGO.AddComponent<PerCameraSunflareManager>();
+                _sunflareManager.Init(_cameras[ScaledCameraIndex], _cameras[NearCameraIndex]);
+            }
 
             JRTIStreamServer.Instance?.RegisterCamera(InstanceId);
 
@@ -277,8 +287,8 @@ namespace JustReadTheInstructions
 
             RestoreRaymarchedLightBuffers();
 
+            if (_sunflareManager) _sunflareManager.UpdateFlares();
             if (_fireflyApplied) UpdateFireflyEffects();
-
             if (JRTISettings.EnableHullcamFilter && HullcamFilterIntegration.IsAvailable)
                 HullcamFilterIntegration.SyncToCamera(_cameras[NearCameraIndex], _hullCamera);
 
@@ -499,6 +509,18 @@ namespace JustReadTheInstructions
             IsActive = false;
 
             JRTIStreamServer.Instance?.UnregisterCamera(InstanceId);
+
+            if (_sunflareManager != null)
+            {
+                UnityEngine.Object.Destroy(_sunflareManager);
+                _sunflareManager = null;
+            }
+
+            if (_sunflareManagerGO != null)
+            {
+                UnityEngine.Object.Destroy(_sunflareManagerGO);
+                _sunflareManagerGO = null;
+            }
 
             foreach (var camera in _cameras)
             {
