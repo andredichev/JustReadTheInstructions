@@ -50,6 +50,10 @@
 			<CKANIdentifier>HullcamVDSContinued</CKANIdentifier>
 			<Visible>false</Visible>
 		</ModReference>
+		<ModReference Include="Scatterer">
+			<DLLPath>GameData/Scatterer/Scatterer.dll</DLLPath>
+			<CKANIdentifier>Scatterer</CKANIdentifier>
+		</ModReference>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -67,6 +71,7 @@
 		<Compile Include="HullcamDockingOverlay.cs" />
 		<Compile Include="ScattererCameraSwap.cs" />
 		<Compile Include="ScattererScaledCameraSwap.cs" />
+		<Compile Include="ScattererSunFlare.cs" />
 		<Compile Include="TUFXIntegration.cs" />
 		<Compile Include="FireflyIntegration.cs" />
 		<Compile Include="EVEIntegration.cs" />
