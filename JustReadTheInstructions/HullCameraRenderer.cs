@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Rendering;
+using System.Reflection;
 
 namespace JustReadTheInstructions
 {
@@ -15,6 +16,7 @@ namespace JustReadTheInstructions
         private int _frameCount;
 
         private static Light _cachedScaledSunLight;
+
         public RenderTexture TargetTexture { get; private set; }
         public bool IsActive { get; private set; }
         public int InstanceId { get; }
@@ -249,6 +251,8 @@ namespace JustReadTheInstructions
 
             if (!TargetTexture.IsCreated()) TargetTexture.Create();
 
+            if (_parallaxApplied) RenderParallaxScatters();
+
             StripRaymarchedLightBuffers();
 
             for (int i = _cameras.Length - 1; i >= 0; i--)
@@ -262,7 +266,6 @@ namespace JustReadTheInstructions
 
             RestoreRaymarchedLightBuffers();
 
-            if (_parallaxApplied) RenderParallaxScatters();
             if (_fireflyApplied) UpdateFireflyEffects();
 
             if (JRTISettings.EnableHullcamFilter && HullcamFilterIntegration.IsAvailable)
@@ -273,7 +276,7 @@ namespace JustReadTheInstructions
 
         private void RenderParallaxScatters()
         {
-            if (!ParallaxIntegration.IsAvailable) return;
+            if (!JRTISettings.EnableParallax || !ParallaxIntegration.IsAvailable) return;
             var nearCamera = _cameras[NearCameraIndex];
             if (nearCamera != null)
                 ParallaxIntegration.RenderToCamera(nearCamera);
@@ -291,7 +294,7 @@ namespace JustReadTheInstructions
         {
             if (_cachedScaledSunLight != null) return _cachedScaledSunLight;
             var field = typeof(Sun).GetField("scaledSunLight",
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             _cachedScaledSunLight = field?.GetValue(Sun.Instance) as Light;
             return _cachedScaledSunLight;
         }
