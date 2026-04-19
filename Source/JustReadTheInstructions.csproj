@@ -54,6 +54,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ModReference Include="Scatterer">
+			<DLLPath>GameData/Scatterer/Scatterer.dll</DLLPath>
+			<CKANIdentifier>Scatterer</CKANIdentifier>
+		</ModReference>
+	</ItemGroup>
+
+	<ItemGroup>
 		<Compile Include="CameraSynchronizer.cs" />
 		<Compile Include="CameraTelemetry.cs" />
 		<Compile Include="CanvasFix.cs" />
@@ -67,6 +74,7 @@
 		<Compile Include="HullcamDockingOverlay.cs" />
 		<Compile Include="ScattererCameraSwap.cs" />
 		<Compile Include="ScattererScaledCameraSwap.cs" />
+		<Compile Include="ScattererSunFlare.cs" />
 		<Compile Include="TUFXIntegration.cs" />
 		<Compile Include="FireflyIntegration.cs" />
 		<Compile Include="EVEIntegration.cs" />
