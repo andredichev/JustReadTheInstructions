@@ -24,6 +24,7 @@
 > **JRTI is currently an experimental public release.**
 >
 > Expect rough edges, compatibility quirks, and breaking changes over time.
+> Mac OS has limited compatibility, the mod may not function properly. This is still being looked into.
 
 ## Overview
 
