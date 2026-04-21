@@ -38,12 +38,10 @@ namespace JustReadTheInstructions
 
         internal sealed class CameraStreamState : IDisposable
         {
-            private const float SnapshotInterestDuration = 3f;
-
             public byte[] LatestJpeg;
             public readonly object JpegLock = new object();
 
-            private volatile float _lastSnapshotInterest;
+            private volatile bool _snapshotPending;
 
             public readonly ConcurrentDictionary<Guid, LatestFrameSlot> MjpegClients
                 = new ConcurrentDictionary<Guid, LatestFrameSlot>();
@@ -51,13 +49,13 @@ namespace JustReadTheInstructions
             public int MjpegClientCount => MjpegClients.Count;
 
             public bool HasActiveClients
-                => MjpegClients.Count > 0
-                || (Time.unscaledTime - _lastSnapshotInterest < SnapshotInterestDuration);
+                => MjpegClients.Count > 0 || _snapshotPending;
 
-            public void MarkSnapshotInterest() => _lastSnapshotInterest = Time.unscaledTime;
+            public void MarkSnapshotInterest() => _snapshotPending = true;
 
             public void PushFrame(byte[] jpeg)
             {
+                _snapshotPending = false;
                 lock (JpegLock)
                     LatestJpeg = jpeg;
                 foreach (var kv in MjpegClients)
