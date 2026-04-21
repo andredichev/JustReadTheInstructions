@@ -9,6 +9,43 @@ namespace JustReadTheInstructions
 {
     public static class HullcamFilterIntegration
     {
+        private class FilterNightVision : HullcamVDS.CameraFilterNightVision
+        {
+            public override bool Activate() { return true; }
+            public override void Deactivate() { }
+            public override void LateUpdate() { }
+        }
+
+        private class NightVisionComponent : MonoBehaviour
+        {
+            private FilterNightVision _filter;
+
+            void OnEnable()
+            {
+                _filter = new FilterNightVision();
+                _filter.Activate();
+            }
+
+            void OnDisable()
+            {
+                _filter?.Deactivate();
+                _filter = null;
+            }
+
+            void LateUpdate()
+            {
+                _filter?.LateUpdate();
+            }
+
+            void OnRenderImage(RenderTexture source, RenderTexture target)
+            {
+                if (_filter != null)
+                    _filter.RenderImageWithFilter(source, target);
+                else
+                    Graphics.Blit(source, target);
+            }
+        }
+
         private static bool? _isAvailable;
         private static Assembly _hullcamAssembly;
 
@@ -72,6 +109,22 @@ namespace JustReadTheInstructions
                 return;
             }
 
+            if (mode == (int)CameraFilter.eCameraMode.NightVision)
+            {
+                var hullcamComp = FindHullcamComponent(targetCamera);
+                if (hullcamComp != null)
+                    UnityEngine.Object.Destroy(hullcamComp);
+
+                if (targetCamera.gameObject.GetComponent<NightVisionComponent>() == null)
+                    targetCamera.gameObject.AddComponent<NightVisionComponent>();
+
+                return;
+            }
+
+            var nv = targetCamera.gameObject.GetComponent<NightVisionComponent>();
+            if (nv != null)
+                UnityEngine.Object.Destroy(nv);
+
             if (!_cachePrepopulated)
                 TryPrepopulateCache();
 
@@ -95,6 +148,10 @@ namespace JustReadTheInstructions
             var comp = FindHullcamComponent(targetCamera);
             if (comp != null)
                 UnityEngine.Object.Destroy(comp);
+
+            var nv = targetCamera.gameObject.GetComponent<NightVisionComponent>();
+            if (nv != null)
+                UnityEngine.Object.Destroy(nv);
         }
 
         private static void TryPrepopulateCache()
@@ -180,7 +237,11 @@ namespace JustReadTheInstructions
             if (sourceComp == null)
                 return;
 
-            var type = sourceComp.GetType();
+            var sourceType = sourceComp.GetType();
+            var type = typeof(CameraFilterNightVision).IsAssignableFrom(sourceType)
+                ? typeof(FilterNightVision)
+                : sourceType;
+
             _cache[mode] = new CachedFilter
             {
                 ComponentType = type,
