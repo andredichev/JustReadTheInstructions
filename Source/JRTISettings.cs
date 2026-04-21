@@ -15,6 +15,8 @@ namespace JustReadTheInstructions
         public static bool UseHDR { get; internal set; } = true;
         public static bool RenderEveryOtherFrame { get; internal set; } = true;
 
+        public static bool EnableDockingOverlay { get; internal set; } = true;
+
         public static float MaxWindowScale { get; internal set; } = 3f;
         public static float MinWindowScale { get; internal set; } = 0.5f;
 
@@ -91,6 +93,7 @@ namespace JustReadTheInstructions
                 AntiAliasing = ParseInt(settings, "AntiAliasing", AntiAliasing);
                 UseHDR = ParseBool(settings, "UseHDR", UseHDR);
                 RenderEveryOtherFrame = ParseBool(settings, "RenderEveryOtherFrame", RenderEveryOtherFrame);
+                EnableDockingOverlay = ParseBool(settings, "EnableDockingOverlay", EnableDockingOverlay);
                 MaxOpenCameras = ParseUInt(settings, "MaxOpenCameras", MaxOpenCameras, 1, 64);
                 MaxWindowScale = ParseFloat(settings, "MaxWindowScale", MaxWindowScale);
                 MinWindowScale = ParseFloat(settings, "MinWindowScale", MinWindowScale);
@@ -133,6 +136,7 @@ namespace JustReadTheInstructions
                 settings.AddValue("AntiAliasing", AntiAliasing);
                 settings.AddValue("UseHDR", UseHDR);
                 settings.AddValue("RenderEveryOtherFrame", RenderEveryOtherFrame);
+                settings.AddValue("EnableDockingOverlay", EnableDockingOverlay);
                 settings.AddValue("MaxWindowScale", MaxWindowScale.ToString(CultureInfo.InvariantCulture));
                 settings.AddValue("MinWindowScale", MinWindowScale.ToString(CultureInfo.InvariantCulture));
                 settings.AddValue("FixedPreviewAspectRatio", FixedPreviewAspectRatio);

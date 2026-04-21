@@ -32,6 +32,8 @@ namespace JustReadTheInstructions
         private bool _fireflyApplied;
         private bool _scattererApplied;
 
+        private DockingCameraOverlay _dockingOverlay;
+
         public HullCameraRenderer(MuMechModuleHullCamera hullCamera)
         {
             _hullCamera = hullCamera ?? throw new ArgumentNullException(nameof(hullCamera));
@@ -42,6 +44,9 @@ namespace JustReadTheInstructions
 
             InitializeRenderTexture();
             SetupCameras();
+
+            _dockingOverlay = new DockingCameraOverlay(_hullCamera.vessel, TargetTexture, InstanceId);
+
             IsActive = true;
         }
 
@@ -277,6 +282,9 @@ namespace JustReadTheInstructions
             if (JRTISettings.EnableHullcamFilter && HullcamFilterIntegration.IsAvailable)
                 HullcamFilterIntegration.SyncToCamera(_cameras[NearCameraIndex], _hullCamera);
 
+            if (JRTISettings.EnableDockingOverlay && GetCameraMode() == CameraFilter.eCameraMode.DockingCam)
+                _dockingOverlay.Render(TargetTexture);
+
             JRTIStreamServer.Instance?.TryCaptureFrame(InstanceId, TargetTexture);
         }
 
@@ -331,6 +339,14 @@ namespace JustReadTheInstructions
                 return "Unknown Camera";
 
             return $"{_hullCamera.vessel.GetDisplayName()}.{_hullCamera.cameraName}";
+        }
+
+        public CameraFilter.eCameraMode GetCameraMode()
+        {
+            if (_hullCamera == null)
+                return CameraFilter.eCameraMode.Normal;
+
+            return (CameraFilter.eCameraMode)(_hullCamera?.cameraMode);
         }
 
         public Vessel GetVessel()
@@ -502,6 +518,8 @@ namespace JustReadTheInstructions
 
             TargetTexture?.Release();
             TargetTexture = null;
+
+            _dockingOverlay.Dispose();
 
             Debug.Log($"[JRTI]: Disposed camera '{GetDisplayName()}'");
         }

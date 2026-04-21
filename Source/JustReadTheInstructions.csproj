@@ -64,6 +64,7 @@
 		<Compile Include="ParallaxIntegration.cs" />
 		<Compile Include="ScattererIntegration.cs" />
 		<Compile Include="HullcamFilterIntegration.cs" />
+		<Compile Include="HullcamDockingOverlay.cs" />
 		<Compile Include="ScattererCameraSwap.cs" />
 		<Compile Include="ScattererScaledCameraSwap.cs" />
 		<Compile Include="TUFXIntegration.cs" />
