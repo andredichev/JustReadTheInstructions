@@ -1,0 +1,74 @@
+name: create-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g. 2.0.0)'
+        required: true
+        type: string
+      branch:
+        description: 'Branch to build from (defaults to main)'
+        required: false
+        type: string
+        default: main
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Extract latest changelog entry
+        run: |
+          python3 - <<'PYEOF'
+          import re
+
+          with open('CHANGELOG.md', 'r') as f:
+              content = f.read()
+
+          match = re.search(r'## \[.*?\].*?\n(.*?)(?=\n## \[|\Z)', content, re.DOTALL)
+          notes = match.group(1).strip() if match else ''
+
+          with open('changelog_entry.md', 'w') as f:
+              f.write(notes)
+          PYEOF
+
+      - name: Build release body
+        run: |
+          {
+            if [ -f "KNOWN_ISSUES.md" ]; then
+              echo "## Known Issues"
+              cat KNOWN_ISSUES.md
+              printf "\n---\n"
+            fi
+            cat changelog_entry.md
+          } > release_body.md
+
+      - name: Package mod
+        run: |
+          mkdir -p staging/JustReadTheInstructions
+          cp -r JustReadTheInstructions/. staging/JustReadTheInstructions/
+          cd staging
+          zip -r "../JustReadTheInstructions-${{ inputs.version }}.zip" JustReadTheInstructions/
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          body_path: release_body.md
+          files: JustReadTheInstructions-${{ inputs.version }}.zip
+          draft: false
+          prerelease: ${{ inputs.prerelease }}
+          make_latest: ${{ inputs.prerelease == false }}
