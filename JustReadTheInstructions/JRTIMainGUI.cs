@@ -204,7 +204,7 @@ namespace JustReadTheInstructions
 
             if (streamOnly)
             {
-                if (GUILayout.Button("■ Stop", _stopBtnStyle, GUILayout.Width(72)))
+                if (GUILayout.Button("■ Stop", streaming ? _streamBtnStyle : _stopBtnStyle, GUILayout.Width(72)))
                     HullCameraManager.Instance?.StopStream(stableId);
             }
             else
