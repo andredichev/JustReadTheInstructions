@@ -4,18 +4,77 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version (e.g. 2.0.2)'
+        description: 'Version (e.g. 2.0.2 or v2.0.2, optionally with 4th digit like 2.0.2.1)'
         required: true
         type: string
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   create-release:
+    runs-on: ubuntu-22.04
     permissions:
       contents: write
-    uses: KSPModdingLibs/KSPBuildTools/.github/workflows/create-release.yml@1.1.1
-    with:
-      version-string: ${{ inputs.version }}
-      use-ckan: true
-      artifacts: GameData/JustReadTheInstructions
-      version-template-extension: ''
-    secrets: inherit
+
+    env:
+      KSP_ROOT: /tmp/ksp
+      RELEASE_STAGING: /tmp/release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Normalize version
+        id: normalize
+        run: |
+          BARE="${{ inputs.version }}"
+          BARE="${BARE#v}"
+          echo "bare=$BARE" >> "$GITHUB_OUTPUT"
+          echo "tag=v$BARE" >> "$GITHUB_OUTPUT"
+          echo "VERSION_TAG=v$BARE" >> "$GITHUB_ENV"
+
+      - name: Update version and changelog
+        id: update-version
+        uses: KSPModdingLibs/KSPBuildTools/.github/actions/update-version@1.1.1
+        with:
+          version-string: ${{ steps.normalize.outputs.bare }}
+          template-extension: ''
+          changelog-input-file: CHANGELOG.md
+
+      - name: Commit and tag
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git commit --allow-empty -m "bump version to $VERSION_TAG"
+          git tag -f -a "$VERSION_TAG" -m "$VERSION_TAG"
+
+      - name: Setup CKAN
+        uses: KSPModdingLibs/KSPBuildTools/.github/actions/setup-ckan@1.1.1
+
+      - name: Compile
+        uses: KSPModdingLibs/KSPBuildTools/.github/actions/compile@1.1.1
+
+      - name: Assemble ZIP
+        run: |
+          mkdir -p "$RELEASE_STAGING"
+          ZIP_NAME="JustReadTheInstructions-${VERSION_TAG}.zip"
+          cd "$GITHUB_WORKSPACE"
+          zip -r "$RELEASE_STAGING/$ZIP_NAME" GameData/JustReadTheInstructions -x "*.pdb"
+          echo "ZIP_PATH=$RELEASE_STAGING/$ZIP_NAME" >> "$GITHUB_ENV"
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git push
+          git push --tags
+          gh release create "$VERSION_TAG" \
+            --draft \
+            --target "${{ github.ref_name }}" \
+            --title "$VERSION_TAG" \
+            "$ZIP_PATH" \
+            --notes-file "${{ steps.update-version.outputs.release-notes-output-file }}"
