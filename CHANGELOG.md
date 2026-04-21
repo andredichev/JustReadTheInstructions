@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- "Stop" button now properly turns green if a client is requesting the camera feed
+
 ---
 
 ## [v2.0.0] Web UI Recording, Polishing, QoL and more! - 2026-04-20
