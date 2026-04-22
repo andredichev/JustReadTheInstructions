@@ -37,6 +37,9 @@ namespace JustReadTheInstructions
             _hullCamera = hullCamera ?? throw new ArgumentNullException(nameof(hullCamera));
             InstanceId = GetStableId(hullCamera);
 
+            if (hullCamera.cameraFoVMax > 0f)
+                hullCamera.cameraFoV = hullCamera.cameraFoVMax;
+
             InitializeRenderTexture();
             SetupCameras();
             IsActive = true;
@@ -343,6 +346,9 @@ namespace JustReadTheInstructions
 
         public void SetFieldOfView(float fov)
         {
+            if (_hullCamera != null)
+                _hullCamera.cameraFoV = fov;
+
             foreach (var camera in _cameras)
             {
                 if (camera != null)

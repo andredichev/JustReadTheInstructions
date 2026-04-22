@@ -39,9 +39,9 @@ namespace JustReadTheInstructions
             _renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
             _telemetry = new CameraTelemetry(renderer.GetVessel());
             WindowId = windowId;
-            _currentFOV = renderer.GetFOV();
             _minFOV = renderer.GetMinFOV();
             _maxFOV = renderer.GetMaxFOV();
+            _currentFOV = _maxFOV > 0f ? _maxFOV : renderer.GetFOV();
 
             InitializeStyles();
             CalculateInitialSize();
