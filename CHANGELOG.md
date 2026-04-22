@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Draggable camera cards instead of static, "randomly" (not really :p) ordered camera cards
+
 ### Changed
 
 - We now show live feed when camera is already being watched (costs no performance and nice to have)

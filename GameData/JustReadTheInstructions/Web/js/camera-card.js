@@ -141,6 +141,7 @@ export class CameraCard {
         const img = document.createElement('img');
         img.alt = this.name;
         img.crossOrigin = 'anonymous';
+        img.draggable = false;
 
         const offlineOverlay = document.createElement('div');
         offlineOverlay.className = 'offline-overlay';
@@ -288,6 +289,7 @@ export class CameraCard {
         if (this._livePreviewEl) return;
         const img = document.createElement('img');
         img.className = 'live-preview-feed';
+        img.draggable = false;
         img.src = `/camera/${this.id}/preview`;
         const snapshotImg = this._getSnapshotImg();
         const preview = snapshotImg.closest('.preview');
