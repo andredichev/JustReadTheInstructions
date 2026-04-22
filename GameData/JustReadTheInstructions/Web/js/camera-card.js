@@ -123,7 +123,7 @@ export class CameraCard {
         const overlay = this.el.querySelector('.offline-overlay');
         if (overlay) overlay.innerHTML = LOS_OVERLAY_HTML;
         const watchBtn = this.el.querySelector('[data-role="watch"]');
-        if (watchBtn) watchBtn.className = 'btn watch-disabled';
+        if (watchBtn) watchBtn.className = 'btn watch';
     }
 
     _buildDom() {
