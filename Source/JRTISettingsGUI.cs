@@ -9,6 +9,9 @@ namespace JustReadTheInstructions
     {
         public static JRTISettingsGUI Instance { get; private set; }
 
+        private static readonly string ModVersion =
+            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
+
         private bool _isVisible;
         private bool _lastHotkey8State;
         private bool _lastHotkey9State;
@@ -194,6 +197,10 @@ namespace JustReadTheInstructions
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Save", _buttonStyle)) ApplyAndSave();
             if (GUILayout.Button("Close", _buttonStyle)) Toggle();
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.Label($"v{ModVersion}", _noteStyle);
             GUILayout.EndHorizontal();
 
             GUILayout.EndVertical();
