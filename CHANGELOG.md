@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Anti-Aliasing minimum option from 1 to 0 (so it's clearer 0 means NO AA)
+- Mobile experience should feel a lot better with the new responsive layout and touch-friendly controls
 
 ## v2.0.1 - 2026-04-22
 
