@@ -146,7 +146,7 @@ dotnet build -c Release
 
 The compiled DLL is written directly to `GameData/JustReadTheInstructions/Plugins/`.
 
-> Using `Debug` instead of `Release` will also copy a bunch of Unity and system DLLs into that folder — they're harmless since KSP ignores them, but Release keeps it clean.
+> Using `Debug` instead of `Release` will also copy a bunch of Unity and system DLLs into that folder - they're harmless since KSP ignores them, but Release keeps it clean.
 
 To install, symlink or copy `GameData/JustReadTheInstructions/` into your KSP `GameData/`.
 

@@ -78,7 +78,7 @@ namespace JustReadTheInstructions
 
                 if (_scaledCameraField == null)
                 {
-                    Debug.LogWarning("[JRTI-ScaledSwap]: No scaled-space camera field found — swap disabled");
+                    Debug.LogWarning("[JRTI-ScaledSwap]: No scaled-space camera field found - swap disabled");
                     return;
                 }
 

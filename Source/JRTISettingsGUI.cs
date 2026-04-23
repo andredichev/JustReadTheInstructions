@@ -41,6 +41,9 @@ namespace JustReadTheInstructions
         private bool _secDiagnostics = true;
         private bool _secTroubleshooting = false;
 
+        private float _savedMessageTime = -10f;
+        private string _prevFocusedControl = "";
+
         private GUIStyle _labelStyle;
         private GUIStyle _fieldStyle;
         private GUIStyle _buttonStyle;
@@ -48,6 +51,7 @@ namespace JustReadTheInstructions
         private GUIStyle _toggleStyle;
         private GUIStyle _descriptionStyle;
         private GUIStyle _noteStyle;
+        private GUIStyle _savedStyle;
         private GUIStyle _warningStyle;
         private bool _stylesInitialized;
 
@@ -145,7 +149,7 @@ namespace JustReadTheInstructions
             if (!_stylesInitialized)
                 InitStyles();
 
-            _windowRect = GUILayout.Window(WindowId, _windowRect, DrawWindow, "JRTI — Settings & Integrations  (Ctrl+Alt+F8/F9)");
+            _windowRect = GUILayout.Window(WindowId, _windowRect, DrawWindow, "JRTI - Settings & Integrations  (Ctrl+Alt+F8/F9)");
             ClampToScreen();
         }
 
@@ -175,6 +179,13 @@ namespace JustReadTheInstructions
                 wordWrap = true,
                 normal = { textColor = new Color(1f, 1f, 0.65f) }
             };
+            _savedStyle = new GUIStyle(skin.label)
+            {
+                fontSize = 11,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleRight,
+                normal = { textColor = new Color(0.4f, 1f, 0.4f) }
+            };
             _warningStyle = new GUIStyle(skin.label)
             {
                 fontSize = 10,
@@ -186,6 +197,14 @@ namespace JustReadTheInstructions
 
         private void DrawWindow(int id)
         {
+            if (Event.current.type == EventType.Repaint)
+            {
+                string currentFocus = GUI.GetNameOfFocusedControl();
+                if (_prevFocusedControl != currentFocus && IsTextFieldControl(_prevFocusedControl))
+                    TriggerSave();
+                _prevFocusedControl = currentFocus;
+            }
+
             _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, true);
             GUILayout.BeginVertical();
 
@@ -199,8 +218,10 @@ namespace JustReadTheInstructions
 
             GUILayout.Space(10);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Save", _buttonStyle)) ApplyAndSave();
             if (GUILayout.Button("Close", _buttonStyle)) Toggle();
+            GUILayout.FlexibleSpace();
+            if (Time.realtimeSinceStartup - _savedMessageTime < 2f)
+                GUILayout.Label("✓ Saved", _savedStyle);
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
@@ -227,22 +248,23 @@ namespace JustReadTheInstructions
 
         private void DrawStreamSection()
         {
-            DrawField("Port", ref _streamPort);
-            DrawField("JPEG Quality  (1–100)", ref _jpegQuality);
-            DrawField("Max FPS", ref _maxFps);
+            DrawField("Port", ref _streamPort, "f_port");
+            DrawField("JPEG Quality  (1-100)", ref _jpegQuality, "f_quality");
+            DrawField("Max FPS", ref _maxFps, "f_fps");
             GUILayout.Space(4);
-            DrawField("Render Width", ref _renderWidth);
-            DrawField("Render Height", ref _renderHeight);
-            DrawField("Anti-Aliasing  (0=off / 1/2/4/8)", ref _antiAliasing);
-            DrawField("Max Open Cameras", ref _maxOpenCameras);
+            DrawField("Render Width", ref _renderWidth, "f_width");
+            DrawField("Render Height", ref _renderHeight, "f_height");
+            DrawField("Anti-Aliasing  (0=off / 1/2/4/8)", ref _antiAliasing, "f_aa");
+            DrawField("Max Open Cameras", ref _maxOpenCameras, "f_cameras");
             GUILayout.Space(4);
-            _renderEveryOtherFrame = GUILayout.Toggle(_renderEveryOtherFrame, "Render every other frame (recommended)", _toggleStyle);
+
+            DrawToggle(ref _renderEveryOtherFrame, "Render every other frame (recommended)");
             if (!_renderEveryOtherFrame)
                 GUILayout.Label("⚠ Rendering every frame doubles per-camera cost. Only viable on a top-tier GPU.", _warningStyle);
             GUILayout.Space(4);
-            _enableDockingOverlay = GUILayout.Toggle(_enableDockingOverlay, "Render overlay with telemetry on docking cameras", _toggleStyle);
-            _fixedPreviewAspectRatio = GUILayout.Toggle(_fixedPreviewAspectRatio, "Fixed preview aspect ratio (square preview window)", _toggleStyle);
-            _minimalUI = GUILayout.Toggle(_minimalUI, "Minimal UI by default (double-click preview to toggle)", _toggleStyle);
+            DrawToggle(ref _enableDockingOverlay, "Render overlay with telemetry on docking cameras");
+            DrawToggle(ref _fixedPreviewAspectRatio, "Fixed preview aspect ratio (square preview window)");
+            DrawToggle(ref _minimalUI, "Minimal UI by default (double-click preview to toggle)");
             GUILayout.Label("Render resolution and AA apply on next camera open.", _noteStyle);
             GUILayout.Label("Stream port change requires game restart.", _noteStyle);
         }
@@ -270,7 +292,7 @@ namespace JustReadTheInstructions
                 JRTISettings.EnableScatterer,
                 v => JRTISettings.EnableScatterer = v,
                 ScattererIntegration.IsAvailable,
-                "Scatterer atmospheric scattering — disables MSAA on JRTI cameras"
+                "Scatterer atmospheric scattering - disables MSAA on JRTI cameras"
             );
             GUILayout.Space(6);
             DrawIntegrationToggle(
@@ -278,7 +300,7 @@ namespace JustReadTheInstructions
                 JRTISettings.EnableEVE,
                 v => JRTISettings.EnableEVE = v,
                 EVEIntegration.IsAvailable,
-                "Environmental Visual Enhancements — clouds, water, atmospheric effects"
+                "Environmental Visual Enhancements - clouds, water, atmospheric effects"
             );
             GUILayout.Space(3);
             DrawIntegrationToggle(
@@ -286,7 +308,7 @@ namespace JustReadTheInstructions
                 JRTISettings.EnableParallax,
                 v => JRTISettings.EnableParallax = v,
                 ParallaxIntegration.IsAvailable,
-                "Parallax-Continued — grass, rocks, trees near camera (can be heavy)"
+                "Parallax-Continued - grass, rocks, trees near camera (can be heavy)"
             );
             GUILayout.Space(3);
             DrawIntegrationToggle(
@@ -294,7 +316,7 @@ namespace JustReadTheInstructions
                 JRTISettings.EnableFirefly,
                 v => JRTISettings.EnableFirefly = v,
                 FireflyIntegration.IsAvailable,
-                "Firefly — atmospheric re-entry plasma effects near camera"
+                "Firefly - atmospheric re-entry plasma effects near camera"
             );
             GUILayout.Space(6);
             DrawIntegrationToggle(
@@ -359,6 +381,7 @@ namespace JustReadTheInstructions
                 setEnabled(newValue);
                 Debug.Log($"[JRTI]: {name} {(newValue ? "enabled" : "disabled")}");
                 HullCameraManager.Instance?.UpdateAllCameraVisualEffects();
+                TriggerSave();
             }
 
             GUILayout.FlexibleSpace();
@@ -381,13 +404,34 @@ namespace JustReadTheInstructions
             GUILayout.EndVertical();
         }
 
-        private void DrawField(string label, ref string value)
+        private void DrawField(string label, ref string value, string controlName)
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label(label, _labelStyle);
+            GUI.SetNextControlName(controlName);
             value = GUILayout.TextField(value, _fieldStyle, GUILayout.Width(90));
             GUILayout.EndHorizontal();
         }
+
+        private void DrawToggle(ref bool value, string label)
+        {
+            bool newValue = GUILayout.Toggle(value, label, _toggleStyle);
+            if (newValue != value)
+            {
+                value = newValue;
+                TriggerSave();
+            }
+        }
+
+        private void TriggerSave()
+        {
+            ApplyAndSave();
+            _savedMessageTime = Time.realtimeSinceStartup;
+        }
+
+        private static bool IsTextFieldControl(string name) =>
+            name == "f_port" || name == "f_quality" || name == "f_fps" ||
+            name == "f_width" || name == "f_height" || name == "f_aa" || name == "f_cameras";
 
         private void ApplyAndSave()
         {

@@ -59,7 +59,7 @@ namespace JustReadTheInstructions
 
             if (moovEnd < 0 || movieTs == 0 || trackTs == 0)
             {
-                Debug.LogWarning($"[JRTI-Stream]: FixMp4 abort — moovEnd={moovEnd}, movieTs={movieTs}, trackTs={trackTs}, frags={frags.Count}, path={path}");
+                Debug.LogWarning($"[JRTI-Stream]: FixMp4 abort - moovEnd={moovEnd}, movieTs={movieTs}, trackTs={trackTs}, frags={frags.Count}, path={path}");
                 return;
             }
 
@@ -73,7 +73,7 @@ namespace JustReadTheInstructions
 
             if (frags.Count == 0)
             {
-                Debug.LogWarning($"[JRTI-Stream]: FixMp4 abort — no moof fragments found. moovEnd={moovEnd}, movieTs={movieTs}, trackTs={trackTs}");
+                Debug.LogWarning($"[JRTI-Stream]: FixMp4 abort - no moof fragments found. moovEnd={moovEnd}, movieTs={movieTs}, trackTs={trackTs}");
                 try { File.WriteAllBytes(path, d); } catch { }
                 return;
             }
@@ -87,7 +87,7 @@ namespace JustReadTheInstructions
             try
             {
                 File.WriteAllBytes(path, result);
-                Debug.Log($"[JRTI-Stream]: FixMp4 OK — {frags.Count} frags, SIDX {sidx.Length}B injected at offset {moovEnd}: {path}");
+                Debug.Log($"[JRTI-Stream]: FixMp4 OK - {frags.Count} frags, SIDX {sidx.Length}B injected at offset {moovEnd}: {path}");
             }
             catch (Exception ex) { Debug.LogError($"[JRTI-Stream]: FixMp4 write failed: {ex.Message}"); }
         }
