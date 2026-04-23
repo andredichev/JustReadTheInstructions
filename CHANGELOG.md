@@ -9,8 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Cameras can now be named & given a unique ID which allows camera web link to be simply the camera's ID
+- Cameras can now be named & given a unique ID via the right-click part menu in the VAB - stored in the craft file
 - Mod version label in settings menu
+
+### Fixed
+
+- Opening more than 4 viewer tabs no longer stalls - the status poll in the viewer now only starts after signal loss, eliminating the persistent per-tab connection that was saturating the browser's HTTP/1.1 connection pool
 
 ## v2.1.0 - 2026-04-22
 
