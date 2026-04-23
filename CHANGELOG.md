@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Docking camera overlay with telemetry
 - A new parameter `FixedPreviewAspectRatio` (boolean) to `settings.cfg`, allowing the in-game camera preview to be forced to a 1:1 aspect ratio
+- Cameras can now be named & given a unique ID which allows camera web link to be simply the camera's ID
 - Mod version label in settings menu
 - Minimal UI option in settings
 - Fixed preview aspect ratio when `FixedPreviewAspectRatio` is enabled, so it doesn't stretch to fit the container (user setting)
