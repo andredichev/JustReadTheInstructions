@@ -19,7 +19,7 @@ namespace JustReadTheInstructions
         public static float MinWindowScale { get; internal set; } = 0.5f;
 
         public static int MaxPreviewSize { get; internal set; } = 360;
-        public static uint MaxOpenCameras { get; internal set; } = 8u;
+        public static uint MaxOpenCameras { get; internal set; } = 32u;
 
         public static bool IsLoaded { get; private set; }
 
