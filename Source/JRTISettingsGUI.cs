@@ -28,6 +28,8 @@ namespace JustReadTheInstructions
         private bool _renderEveryOtherFrame;
         private string _streamPort;
 
+        private bool _enableDockingOverlay;
+
         private string _jpegQuality;
         private string _maxFps;
         private string _maxOpenCameras;
@@ -236,6 +238,7 @@ namespace JustReadTheInstructions
             if (!_renderEveryOtherFrame)
                 GUILayout.Label("⚠ Rendering every frame doubles per-camera cost. Only viable on a top-tier GPU.", _warningStyle);
             GUILayout.Space(4);
+            _enableDockingOverlay = GUILayout.Toggle(_enableDockingOverlay, "Render overlay with telemetry on docking cameras", _toggleStyle);
             GUILayout.Label("Render resolution and AA apply on next camera open.", _noteStyle);
             GUILayout.Label("Stream port change requires game restart.", _noteStyle);
         }
@@ -388,6 +391,7 @@ namespace JustReadTheInstructions
             if (int.TryParse(_renderHeight, out int h)) JRTISettings.RenderHeight = h;
             if (int.TryParse(_antiAliasing, out int aa)) JRTISettings.AntiAliasing = aa;
             JRTISettings.RenderEveryOtherFrame = _renderEveryOtherFrame;
+            JRTISettings.EnableDockingOverlay = _enableDockingOverlay;
             if (int.TryParse(_streamPort, out int port)) JRTISettings.StreamPort = port;
             if (int.TryParse(_jpegQuality, out int q)) JRTISettings.StreamJpegQuality = q;
             if (int.TryParse(_maxFps, out int fps)) JRTISettings.StreamMaxFps = fps;
@@ -404,6 +408,7 @@ namespace JustReadTheInstructions
             _renderHeight = JRTISettings.RenderHeight.ToString();
             _antiAliasing = JRTISettings.AntiAliasing.ToString();
             _renderEveryOtherFrame = JRTISettings.RenderEveryOtherFrame;
+            _enableDockingOverlay = JRTISettings.EnableDockingOverlay;
             _streamPort = JRTISettings.StreamPort.ToString();
             _jpegQuality = JRTISettings.StreamJpegQuality.ToString();
             _maxFps = JRTISettings.StreamMaxFps.ToString();
