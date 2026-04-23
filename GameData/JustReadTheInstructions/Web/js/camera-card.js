@@ -28,7 +28,7 @@ function makeOverflowMenu(items) {
         _overflowCloseListenerAdded = true;
         document.addEventListener('pointerdown', (e) => {
             if (!e.target.closest('.overflow-wrapper') && !e.target.closest('.overflow-menu'))
-                document.querySelectorAll('.overflow-menu:not([hidden])').forEach(m => m.hidden = true);
+                document.querySelectorAll('.overflow-menu--open').forEach(m => m.classList.remove('overflow-menu--open'));
         }, true);
     }
 
@@ -39,7 +39,6 @@ function makeOverflowMenu(items) {
 
     const menu = document.createElement('div');
     menu.className = 'overflow-menu';
-    menu.hidden = true;
     document.body.appendChild(menu);
 
     const reposition = () => {
@@ -57,16 +56,17 @@ function makeOverflowMenu(items) {
             e.stopPropagation();
             const ok = await copyToClipboard(getText());
             item.textContent = ok ? '✓ Copied' : 'Manual Copy';
-            setTimeout(() => { item.textContent = label; menu.hidden = true; }, 1200);
+            setTimeout(() => { item.textContent = label; menu.classList.remove('overflow-menu--open'); }, 1200);
         });
         menu.appendChild(item);
     }
 
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        document.querySelectorAll('.overflow-menu:not([hidden])').forEach(m => { if (m !== menu) m.hidden = true; });
-        if (menu.hidden) reposition();
-        menu.hidden = !menu.hidden;
+        document.querySelectorAll('.overflow-menu--open').forEach(m => { if (m !== menu) m.classList.remove('overflow-menu--open'); });
+        const isOpen = menu.classList.contains('overflow-menu--open');
+        if (!isOpen) reposition();
+        menu.classList.toggle('overflow-menu--open');
     });
 
     wrapper.appendChild(btn);

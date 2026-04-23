@@ -28,6 +28,20 @@ function main() {
     img.src = base;
     document.title = `Camera ${cameraId} - JRTI Stream`;
 
+    const hud = document.getElementById('viewer-hud');
+    const hudName = document.getElementById('viewer-hud-name');
+    if (hudName) hudName.textContent = `Camera ${cameraId}`;
+
+    let hudTimer;
+    const showHud = () => {
+        hud?.classList.remove('hidden');
+        clearTimeout(hudTimer);
+        hudTimer = setTimeout(() => hud?.classList.add('hidden'), 3000);
+    };
+    document.addEventListener('mousemove', showHud, { passive: true });
+    document.addEventListener('touchstart', showHud, { passive: true });
+    showHud();
+
     let offAt = 0;
     let losMode = false;
 

@@ -36,9 +36,11 @@ export function enableDragOrder(container, onReorder) {
         if (!drag) return;
         cancelAnimationFrame(drag.edgeRaf);
         if (drag.active) {
-            drag.card.removeAttribute('style');
-            drag.placeholder.replaceWith(drag.card);
+            const card = drag.card;
+            card.removeAttribute('style');
+            drag.placeholder.replaceWith(card);
             onReorder();
+            requestAnimationFrame(() => card.classList.remove('dragging'));
         }
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
@@ -97,6 +99,7 @@ function _activate(drag, e) {
     const rect = drag.card.getBoundingClientRect();
     drag.offsetX = e.clientX - rect.left;
     drag.offsetY = e.clientY - rect.top;
+    drag.card.classList.add('dragging');
 
     const ph = document.createElement('div');
     ph.className = 'drag-placeholder';

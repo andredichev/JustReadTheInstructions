@@ -12,7 +12,10 @@ function show() {
 }
 
 function hide() {
-    document.getElementById('settings-modal')?.classList.remove('visible');
+    const el = document.getElementById('settings-modal');
+    if (!el) return;
+    el.classList.add('modal-backdrop--closing');
+    setTimeout(() => el.classList.remove('visible', 'modal-backdrop--closing'), 180);
 }
 
 function renderOptions(select) {
