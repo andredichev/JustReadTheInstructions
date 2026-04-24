@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Opening more than 4 viewer tabs no longer stalls - the status poll in the viewer now only starts after signal loss, eliminating the persistent per-tab connection that was saturating the browser's HTTP/1.1 connection pool
+- WebM VINT encoding bitwise-or on sign-extended operand
 
 ## v2.2.0 - 2026-04-24
 
