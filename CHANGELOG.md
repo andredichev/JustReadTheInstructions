@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## v2.2.0 - 2026-04-24
 
 ### Changed
 
@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drag the in-game preview by the camera image (on large screens, it can be difficult to target the title bar with the mouse...)
 - More space for the streaming label
 - Mac camera streaming now works via a synchronous GPU readback fallback (Metal does not support Unity's async readback API)
+
 
 ## v2.1.0 - 2026-04-22
 
@@ -51,11 +52,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Anti-Aliasing minimum option from 1 to 0 (so it's clearer 0 means NO AA)
 - Mobile experience should feel a lot better with the new responsive layout and touch-friendly controls
 
+
 ## v2.0.1 - 2026-04-22
 
 ### Fixed
 
 - "Stop" button now properly turns green if a client is requesting the camera feed
+
 
 ## v2.0.0 Web UI Recording, Polishing, QoL and more! - 2026-04-20
 
@@ -154,12 +157,14 @@ There is nothing permanent except change
 - Snapshot polling interval raised to 10 s (was 2 s) and snapshot interest window reduced to 3 s, so cameras sleep between polls rather than staying hot continuously
 - Heartbeat and server-side session management are now skipped entirely for remote (local-save) recordings
 
+
 ## v2.0.0-beta.1 Web UI Recording (Beta 1) - 2026-04-16
 
 ### Added
 
 - Basic recording support in the web UI (experimental)
 - Recording support in the C# API
+
 
 ## v1.0.0 - 2026-04-15
 
