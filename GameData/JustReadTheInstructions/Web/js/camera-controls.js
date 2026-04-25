@@ -65,6 +65,7 @@ async function loadSettings(cameraId, controls) {
         const fovRow = document.getElementById('fov-row');
         if (s.fov != null && s.fovMax > s.fovMin) {
             const c = controls.fov;
+            if (!c?.slider) return;
             c.slider.min = s.fovMin;
             c.slider.max = s.fovMax;
             document.querySelector('[data-reset="fov"]').dataset.default = s.fov;
@@ -73,10 +74,13 @@ async function loadSettings(cameraId, controls) {
         } else {
             if (fovRow) fovRow.hidden = true;
         }
-    } catch { }
+    } catch (err) {
+        console.warn('[JRTI] Failed to load camera settings:', err);
+    }
 }
 
 function setSlider(ctrl, value) {
+    if (!ctrl.slider || !ctrl.display) return;
     ctrl.slider.value = value;
     ctrl.display.textContent = ctrl.fmt(value);
 }
