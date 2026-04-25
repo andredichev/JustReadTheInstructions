@@ -9,12 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- In-game UI polish pass
+- In-game UI polish pass - more spacious layouts, larger text, roomier buttons and camera controls
 
 ### Added
 
 - Per-camera brightness, contrast, and gamma controls in the web viewer - adjustments are applied server-side so all viewers on the local network see the same image
 - Per-camera FOV control in the web viewer (shown when the camera reports a valid FOV range from KSP)
+
+### Fixed
+
+- Camera windows now open in full UI mode by default - minimal mode (preview only) can be enabled in settings or toggled per-window with a double-click
+- Double-clicking the camera preview to toggle minimal mode now correctly resizes the window immediately (used to bug out and not properly resize until the next manual resize from the user)
 
 ## v2.2.0.1 - 2026-04-24
 
