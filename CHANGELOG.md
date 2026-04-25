@@ -14,17 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Docking camera overlay with telemetry
-- A new parameter `FixedPreviewAspectRatio` (boolean) to `settings.cfg`, allowing the in-game camera preview to be forced to a 1:1 aspect ratio
+- Docking camera overlay with telemetry (credits to andredichev for the PR)
+- A new parameter `FixedPreviewAspectRatio` (boolean) to `settings.cfg`, allowing the in-game camera preview to be forced to a 1:1 aspect ratio (thanks to andredichev for the PR again)
 - Mod version label in settings menu
 - Minimal UI option in settings
-- Fixed preview aspect ratio when `FixedPreviewAspectRatio` is enabled, so it doesn't stretch to fit the container (user setting)
+- Fixed preview aspect ratio when `FixedPreviewAspectRatio` is enabled, so it doesn't stretch to fit the container (user setting, thanks to andredichev for the PR, once more :D)
 - Added recording groups to allow recording a select subset of cameras within a group
 
 ### Fixed
 
-- Drag the in-game preview by the camera image (on large screens, it can be difficult to target the title bar with the mouse...)
-- More space for the streaming label
+- Drag the in-game preview by the camera image (on large screens, it can be difficult to target the title bar with the mouse... courtesy of andredichev)
+- More space for the streaming label (suggestions from KSP forums && changes by andredichev)
 - Mac camera streaming now works via a synchronous GPU readback fallback (Metal does not support Unity's async readback API)
 
 
