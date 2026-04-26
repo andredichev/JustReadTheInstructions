@@ -30,6 +30,8 @@ namespace JustReadTheInstructions
         private bool _enableStreamServer;
         private string _streamPort;
 
+        private bool _freeFOV;
+
         private bool _enableDockingOverlay;
         private bool _fixedPreviewAspectRatio;
         private bool _minimalUI;
@@ -481,6 +483,7 @@ namespace JustReadTheInstructions
             JRTISettings.SpreadCaptures = _spreadCaptures;
             JRTISettings.InGameRecording = _inGameRecording;
             JRTISettings.EnableStreamServer = _enableStreamServer;
+            JRTISettings.FreeFOV = _freeFOV;
             JRTISettings.EnableDockingOverlay = _enableDockingOverlay;
             JRTISettings.FixedPreviewAspectRatio = _fixedPreviewAspectRatio;
             JRTISettings.MinimalUI = _minimalUI;
@@ -502,6 +505,7 @@ namespace JustReadTheInstructions
             _spreadCaptures = JRTISettings.SpreadCaptures;
             _inGameRecording = JRTISettings.InGameRecording;
             _enableStreamServer = JRTISettings.EnableStreamServer;
+            _freeFOV = JRTISettings.FreeFOV;
             _enableDockingOverlay = JRTISettings.EnableDockingOverlay;
             _fixedPreviewAspectRatio = JRTISettings.FixedPreviewAspectRatio;
             _minimalUI = JRTISettings.MinimalUI;
