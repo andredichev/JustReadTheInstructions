@@ -28,6 +28,8 @@ namespace JustReadTheInstructions
         private bool _renderEveryOtherFrame;
         private string _streamPort;
 
+        private bool _freeFOV;
+
         private bool _enableDockingOverlay;
         private bool _fixedPreviewAspectRatio;
         private bool _minimalUI;
@@ -248,6 +250,7 @@ namespace JustReadTheInstructions
             DrawField("JPEG Quality  (1-100)", ref _jpegQuality, "f_quality");
             DrawField("Max FPS", ref _maxFps, "f_fps");
             GUILayout.Space(4);
+
             DrawField("Render Width", ref _renderWidth, "f_width");
             DrawField("Render Height", ref _renderHeight, "f_height");
             DrawField("Anti-Aliasing  (0=off / 1/2/4/8)", ref _antiAliasing, "f_aa");
@@ -258,6 +261,8 @@ namespace JustReadTheInstructions
             if (!_renderEveryOtherFrame)
                 GUILayout.Label("⚠ Rendering every frame doubles per-camera cost. Only viable on a top-tier GPU.", _warningStyle);
             GUILayout.Space(4);
+
+            DrawToggle(ref _freeFOV, "No FOV limits (ignore hullcamera)");
             DrawToggle(ref _enableDockingOverlay, "Render overlay with telemetry on docking cameras");
             DrawToggle(ref _fixedPreviewAspectRatio, "Fixed preview aspect ratio (square preview window)");
             DrawToggle(ref _minimalUI, "Minimal UI by default (double-click preview to toggle)");
@@ -435,6 +440,7 @@ namespace JustReadTheInstructions
             if (int.TryParse(_renderHeight, out int h)) JRTISettings.RenderHeight = h;
             if (int.TryParse(_antiAliasing, out int aa)) JRTISettings.AntiAliasing = aa;
             JRTISettings.RenderEveryOtherFrame = _renderEveryOtherFrame;
+            JRTISettings.FreeFOV = _freeFOV;
             JRTISettings.EnableDockingOverlay = _enableDockingOverlay;
             JRTISettings.FixedPreviewAspectRatio = _fixedPreviewAspectRatio;
             JRTISettings.MinimalUI = _minimalUI;
@@ -454,6 +460,7 @@ namespace JustReadTheInstructions
             _renderHeight = JRTISettings.RenderHeight.ToString();
             _antiAliasing = JRTISettings.AntiAliasing.ToString();
             _renderEveryOtherFrame = JRTISettings.RenderEveryOtherFrame;
+            _freeFOV = JRTISettings.FreeFOV;
             _enableDockingOverlay = JRTISettings.EnableDockingOverlay;
             _fixedPreviewAspectRatio = JRTISettings.FixedPreviewAspectRatio;
             _minimalUI = JRTISettings.MinimalUI;
