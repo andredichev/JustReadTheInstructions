@@ -263,8 +263,8 @@ namespace JustReadTheInstructions
             float newFOV = GUI.VerticalSlider(
                 new Rect(controlX + 20, controlY, 20, 100),
                 _currentFOV,
-                SliderMaxFOV,
-                SliderMinFOV
+                JRTISettings.FreeFOV ? SliderMaxFOV : _maxFOV,
+                JRTISettings.FreeFOV ? SliderMinFOV : _minFOV
             );
 
             if (Math.Abs(newFOV - _currentFOV) > 0.1f)

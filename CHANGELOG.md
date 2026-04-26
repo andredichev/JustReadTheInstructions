@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Setting to ignore FOV limits from hullcamera
 - Docking camera overlay with telemetry (credits to andredichev for the PR)
 - A new parameter `FixedPreviewAspectRatio` (boolean) to `settings.cfg`, allowing the in-game camera preview to be forced to a 1:1 aspect ratio (thanks to andredichev for the PR again)
 - Mod version label in settings menu

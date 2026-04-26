@@ -28,6 +28,8 @@ namespace JustReadTheInstructions
         private bool _renderEveryOtherFrame;
         private string _streamPort;
 
+        private bool _freeFOV;
+
         private bool _enableDockingOverlay;
         private bool _fixedPreviewAspectRatio;
         private bool _minimalUI;
@@ -454,6 +456,7 @@ namespace JustReadTheInstructions
             if (int.TryParse(_renderHeight, out int h)) JRTISettings.RenderHeight = h;
             if (int.TryParse(_antiAliasing, out int aa)) JRTISettings.AntiAliasing = aa;
             JRTISettings.RenderEveryOtherFrame = _renderEveryOtherFrame;
+            JRTISettings.FreeFOV = _freeFOV;
             JRTISettings.EnableDockingOverlay = _enableDockingOverlay;
             JRTISettings.FixedPreviewAspectRatio = _fixedPreviewAspectRatio;
             JRTISettings.MinimalUI = _minimalUI;
@@ -473,6 +476,7 @@ namespace JustReadTheInstructions
             _renderHeight = JRTISettings.RenderHeight.ToString();
             _antiAliasing = JRTISettings.AntiAliasing.ToString();
             _renderEveryOtherFrame = JRTISettings.RenderEveryOtherFrame;
+            _freeFOV = JRTISettings.FreeFOV;
             _enableDockingOverlay = JRTISettings.EnableDockingOverlay;
             _fixedPreviewAspectRatio = JRTISettings.FixedPreviewAspectRatio;
             _minimalUI = JRTISettings.MinimalUI;
