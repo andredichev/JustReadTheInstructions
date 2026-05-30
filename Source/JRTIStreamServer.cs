@@ -31,13 +31,21 @@ namespace JustReadTheInstructions
             = new ConcurrentDictionary<int, bool>();
         private readonly ConcurrentDictionary<string, RecordingSession> _recordings
             = new ConcurrentDictionary<string, RecordingSession>();
-        private readonly ConcurrentDictionary<string, byte> _finalizedSessions
-            = new ConcurrentDictionary<string, byte>();
+        private readonly ConcurrentDictionary<string, DateTime> _finalizedSessions
+            = new ConcurrentDictionary<string, DateTime>();
+
+        private static readonly TimeSpan FinalizedRetention = TimeSpan.FromSeconds(60);
 
         private float MinCapturePeriod => 1f / Mathf.Max(1, JRTISettings.StreamMaxFps);
 
         void Awake()
         {
+            if (!JRTISettings.EnableStreamServer)
+            {
+                Debug.Log("[JRTI-Stream]: Web server disabled in settings - in-game windows only");
+                Destroy(this);
+                return;
+            }
             if (Instance != null) { Destroy(this); return; }
             Instance = this;
             LaunchId = Guid.NewGuid().ToString("N");
@@ -68,6 +76,18 @@ namespace JustReadTheInstructions
                 state.Dispose();
             _lastCaptureTimes.TryRemove(cameraId, out _);
             _captureInFlight.TryRemove(cameraId, out _);
+        }
+
+        public void PublishCameraInfo(int cameraId, string displayName, float fov, float fovMin, float fovMax)
+        {
+            if (_states.TryGetValue(cameraId, out var s))
+                s.PublishInfo(displayName, fov, fovMin, fovMax);
+        }
+
+        public bool TryTakePendingFov(int cameraId, out float fov)
+        {
+            fov = 0f;
+            return _states.TryGetValue(cameraId, out var s) && s.TryTakePendingFov(out fov);
         }
 
         public bool IsStreaming(int cameraId)
@@ -226,12 +246,14 @@ namespace JustReadTheInstructions
                     Thread.Sleep(WatchdogInterval);
                     if (!_running) break;
 
+                    PruneFinalizedSessions();
+
                     var cutoff = DateTime.UtcNow - RecordingIdleTimeout;
                     foreach (var kv in _recordings)
                     {
                         if (kv.Value.LastActivityUtc >= cutoff) continue;
 
-                        _finalizedSessions.TryAdd(kv.Key, 0);
+                        _finalizedSessions[kv.Key] = DateTime.UtcNow;
                         if (_recordings.TryRemove(kv.Key, out var session))
                         {
                             try
@@ -260,6 +282,16 @@ namespace JustReadTheInstructions
                 }
                 catch (ThreadInterruptedException) { break; }
                 catch (Exception ex) { if (_running) Debug.LogError($"[JRTI-Stream]: Watchdog error: {ex.Message}"); }
+            }
+        }
+
+        private void PruneFinalizedSessions()
+        {
+            var staleCutoff = DateTime.UtcNow - FinalizedRetention;
+            foreach (var kv in _finalizedSessions)
+            {
+                if (kv.Value < staleCutoff)
+                    _finalizedSessions.TryRemove(kv.Key, out _);
             }
         }
 

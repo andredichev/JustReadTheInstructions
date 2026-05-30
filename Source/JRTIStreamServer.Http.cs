@@ -20,9 +20,11 @@ namespace JustReadTheInstructions
         private void ServeStaticFile(HttpListenerContext ctx, string relativePath)
         {
             var webRootFull = Path.GetFullPath(WebRoot);
+            if (!webRootFull.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                webRootFull += Path.DirectorySeparatorChar;
             var candidate = Path.GetFullPath(Path.Combine(WebRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
 
-            if (!candidate.StartsWith(webRootFull, StringComparison.Ordinal))
+            if (!candidate.StartsWith(webRootFull, PathComparison))
             {
                 ServeError(ctx, 403, "Forbidden");
                 return;
@@ -56,12 +58,9 @@ namespace JustReadTheInstructions
 
             foreach (var kv in _states)
             {
-                if (HullCameraManager.Instance != null && !HullCameraManager.Instance.HasCamera(kv.Key))
-                    continue;
-
                 if (!first) sb.Append(',');
                 int id = kv.Key;
-                string name = HullCameraManager.Instance?.GetCameraDisplayName(id) ?? id.ToString();
+                string name = kv.Value.DisplayName ?? id.ToString();
                 sb.Append($"{{\"id\":{id},\"name\":\"{EscapeJson(name)}\",\"streaming\":true,\"viewerCount\":{kv.Value.MjpegClientCount},")
                   .Append($"\"snapshotUrl\":\"/camera/{id}/snapshot\",\"streamUrl\":\"/viewer.html?id={id}\"}}");
                 first = false;
@@ -188,7 +187,7 @@ namespace JustReadTheInstructions
                 if (TryParseJsonFloat(body, "gamma", out var g))
                     state.Gamma = UnityEngine.Mathf.Clamp(g, 0.1f, 5f);
                 if (TryParseJsonFloat(body, "fov", out var fov))
-                    HullCameraManager.Instance?.SetFov(cameraId, fov);
+                    state.SetPendingFov(fov);
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.Close();
@@ -201,14 +200,11 @@ namespace JustReadTheInstructions
             sb.Append($"\"contrast\":{state.Contrast.ToString("F2", ic)},");
             sb.Append($"\"gamma\":{state.Gamma.ToString("F2", ic)}");
 
-            float? fovVal = HullCameraManager.Instance?.GetFov(cameraId);
-            float? fovMin = HullCameraManager.Instance?.GetFovMin(cameraId);
-            float? fovMax = HullCameraManager.Instance?.GetFovMax(cameraId);
-            if (fovVal.HasValue && fovMax.GetValueOrDefault() > fovMin.GetValueOrDefault())
+            if (state.HasFov)
             {
-                sb.Append($",\"fov\":{fovVal.Value.ToString("F1", ic)}");
-                sb.Append($",\"fovMin\":{fovMin.Value.ToString("F1", ic)}");
-                sb.Append($",\"fovMax\":{fovMax.Value.ToString("F1", ic)}");
+                sb.Append($",\"fov\":{state.Fov.ToString("F1", ic)}");
+                sb.Append($",\"fovMin\":{state.FovMin.ToString("F1", ic)}");
+                sb.Append($",\"fovMax\":{state.FovMax.ToString("F1", ic)}");
             }
 
             sb.Append("}");

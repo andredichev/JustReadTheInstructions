@@ -5,19 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+> **Versioning note:** versions use the four-part `MAJOR.MINOR.PATCH.BUILD` form that KSP/Unity DLLs expect. The first three parts follow SemVer; the fourth part (`BUILD`) is repurposed here to mark pre-release / beta iterations of an upcoming version.
+
 ## Unreleased
+
+### Added
+
+- (Experimental) Option to disable the web streaming server entirely - run JRTI with in-game camera windows only, no HTTP server, browser streaming, or recording. Lighter on low-end machines. Toggle in Settings > Stream / Capture, or set `EnableStreamServer` in `settings.cfg`. Takes effect on next flight scene entry
+- Per-camera brightness, contrast, and gamma controls in the web viewer - adjustments are applied server-side so all viewers on the local network see the same image
+- Per-camera FOV control in the web viewer (shown when the camera reports a valid FOV range from KSP)
 
 ### Changed
 
 - In-game UI polish pass - more spacious layouts, larger text, roomier buttons and camera controls
 
-### Added
-
-- Per-camera brightness, contrast, and gamma controls in the web viewer - adjustments are applied server-side so all viewers on the local network see the same image
-- Per-camera FOV control in the web viewer (shown when the camera reports a valid FOV range from KSP)
-
 ### Fixed
 
+- Camera IDs are now scoped to a flight session and freed when a craft is recovered or unloaded - relaunching a craft reliably restores its chosen IDs instead of them being bumped because a now-gone craft still held the number
+- The web server no longer reaches into live in-game camera state from its request threads, removing a rare race that could surface as a crash near the web UI
+- Two memory structures (the runtime camera-ID map and the finalized-recording set) no longer grow unbounded over a long session
+- Camera windows now cascade on screen when opened instead of all stacking in the bottom-right corner
 - Camera windows now open in full UI mode by default - minimal mode (preview only) can be enabled in settings or toggled per-window with a double-click
 - Double-clicking the camera preview to toggle minimal mode now correctly resizes the window immediately (used to bug out and not properly resize until the next manual resize from the user)
 

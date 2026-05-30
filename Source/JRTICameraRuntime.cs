@@ -17,6 +17,15 @@ namespace JustReadTheInstructions
             return id;
         }
 
+        public static void Reset() => _runtimeIds.Clear();
+
+        public static void RetainOnly(HashSet<uint> livePersistentIds)
+        {
+            var stale = _runtimeIds.Keys.Where(k => !livePersistentIds.Contains(k)).ToList();
+            foreach (var key in stale)
+                _runtimeIds.Remove(key);
+        }
+
         private static bool IsIdTaken(uint excludePersistentId, int candidateId)
             => _runtimeIds.Any(kvp => kvp.Key != excludePersistentId && kvp.Value == candidateId);
 

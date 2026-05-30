@@ -41,6 +41,39 @@ namespace JustReadTheInstructions
             public byte[] LatestJpeg;
             public readonly object JpegLock = new object();
 
+            public volatile string DisplayName;
+            public float Fov;
+            public float FovMin;
+            public float FovMax;
+            private volatile bool _hasFov;
+            public bool HasFov => _hasFov;
+
+            private float _pendingFov;
+            private volatile bool _hasPendingFov;
+
+            public void PublishInfo(string name, float fov, float min, float max)
+            {
+                DisplayName = name;
+                Fov = fov;
+                FovMin = min;
+                FovMax = max;
+                _hasFov = max > min;
+            }
+
+            public void SetPendingFov(float fov)
+            {
+                _pendingFov = fov;
+                _hasPendingFov = true;
+            }
+
+            public bool TryTakePendingFov(out float fov)
+            {
+                if (!_hasPendingFov) { fov = 0f; return false; }
+                fov = _pendingFov;
+                _hasPendingFov = false;
+                return true;
+            }
+
             public float Brightness;
             public float Contrast = 1f;
             public float Gamma = 1f;

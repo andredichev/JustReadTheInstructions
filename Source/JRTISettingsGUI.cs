@@ -26,6 +26,7 @@ namespace JustReadTheInstructions
         private string _renderHeight;
         private string _antiAliasing;
         private bool _renderEveryOtherFrame;
+        private bool _enableStreamServer;
         private string _streamPort;
 
         private bool _enableDockingOverlay;
@@ -246,6 +247,11 @@ namespace JustReadTheInstructions
         private void DrawStreamSection()
         {
             GUILayout.Space(2);
+            DrawToggle(ref _enableStreamServer, "Enable web streaming server  (experimental)");
+            GUILayout.Label("Turn off to run JRTI with in-game camera windows only - no web server, browser streaming, or recording. Lighter on weaker machines. Takes effect on next flight scene entry.", _noteStyle);
+            if (!_enableStreamServer)
+                GUILayout.Label("⚠ Web viewer, MJPEG export, and recording are unavailable while this is off.", _warningStyle);
+            GUILayout.Space(6);
             DrawField("Port", ref _streamPort, "f_port");
             GUILayout.Space(2);
             DrawField("JPEG Quality  (1-100)", ref _jpegQuality, "f_quality");
@@ -454,6 +460,7 @@ namespace JustReadTheInstructions
             if (int.TryParse(_renderHeight, out int h)) JRTISettings.RenderHeight = h;
             if (int.TryParse(_antiAliasing, out int aa)) JRTISettings.AntiAliasing = aa;
             JRTISettings.RenderEveryOtherFrame = _renderEveryOtherFrame;
+            JRTISettings.EnableStreamServer = _enableStreamServer;
             JRTISettings.EnableDockingOverlay = _enableDockingOverlay;
             JRTISettings.FixedPreviewAspectRatio = _fixedPreviewAspectRatio;
             JRTISettings.MinimalUI = _minimalUI;
@@ -473,6 +480,7 @@ namespace JustReadTheInstructions
             _renderHeight = JRTISettings.RenderHeight.ToString();
             _antiAliasing = JRTISettings.AntiAliasing.ToString();
             _renderEveryOtherFrame = JRTISettings.RenderEveryOtherFrame;
+            _enableStreamServer = JRTISettings.EnableStreamServer;
             _enableDockingOverlay = JRTISettings.EnableDockingOverlay;
             _fixedPreviewAspectRatio = JRTISettings.FixedPreviewAspectRatio;
             _minimalUI = JRTISettings.MinimalUI;

@@ -98,7 +98,7 @@ namespace JustReadTheInstructions
 
         private void FinalizeRecordingSession(HttpListenerContext ctx, string sessionId)
         {
-            _finalizedSessions.TryAdd(sessionId, 0);
+            _finalizedSessions[sessionId] = DateTime.UtcNow;
             if (_recordings.TryRemove(sessionId, out var session))
             {
                 try
@@ -123,7 +123,7 @@ namespace JustReadTheInstructions
 
         private void AbortRecordingSession(HttpListenerContext ctx, string sessionId)
         {
-            _finalizedSessions.TryAdd(sessionId, 0);
+            _finalizedSessions[sessionId] = DateTime.UtcNow;
             if (_recordings.TryRemove(sessionId, out var session))
             {
                 try

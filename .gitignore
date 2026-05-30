@@ -376,3 +376,9 @@ Dependencies/
 .vs/
 KSPPath.props
 GameData/JustReadTheInstructions/Plugins/
+GameData/JustReadTheInstructions/Web/recordings/
+.vscode/settings.json
+
+# Local, untracked notes
+TODO.local.md
+*.local.md

@@ -46,6 +46,20 @@
 * Record camera feeds from the web UI (locally on the KSP host, or Save-As on remote clients)
 * Grab the raw MJPEG feed URL for OBS or other external tools
 * Adjust brightness, contrast, gamma, and FOV per camera from the web viewer - applied server-side so all viewers on the local network see the same image
+* Name cameras and assign a stable numeric ID from the part's right-click menu in the editor - kept in the craft file, so the stream URL stays the same across relaunches
+
+## Camera Naming & IDs
+
+Right-click a camera part in the VAB / SPH to open the **JRTI** group, where you can **Set Name** and **Set ID**. Both are saved in the craft file - no external config needed.
+
+The ID is what appears in the camera's stream URL (`http://localhost:<port>/camera/<id>/stream`), so giving a camera a fixed ID lets you point OBS (or any tool) at the same URL every time you fly that craft.
+
+A few details worth knowing about how IDs resolve at runtime:
+
+* **Leave the ID blank (or 0) to auto-assign** the lowest free number, starting at `1`.
+* **IDs are unique among cameras loaded at the same time.** They key the live stream endpoints, so two active cameras can never share one number.
+* **Collisions are resolved automatically.** If two cameras would claim the same ID simultaneously - for example two separate craft both set to ID `1` while within physics range - the first one to load keeps it and the others are bumped to the next free number. Their feeds still work; only the numeric ID shifts.
+* **IDs are scoped to a flight session.** They are freed when a craft is recovered or unloaded, and reset when you re-enter the flight scene, so relaunching a single craft reliably restores its chosen IDs.
 
 ## Screenshot
 

@@ -19,6 +19,7 @@ namespace JustReadTheInstructions
         {
             if (Instance != null) { Destroy(this); return; }
             Instance = this;
+            JRTICameraRuntime.Reset();
             Debug.Log("[JRTI]: Camera Manager initialized");
         }
 
@@ -35,6 +36,7 @@ namespace JustReadTheInstructions
         void Update()
         {
             UpdateAllRenderers();
+            SyncStreamServerState();
             if (Time.frameCount % 60 == 0)
                 CleanupInvalidCameras();
         }
@@ -86,6 +88,24 @@ namespace JustReadTheInstructions
                 window.Draw();
         }
 
+        private void SyncStreamServerState()
+        {
+            var server = JRTIStreamServer.Instance;
+            if (server == null) return;
+
+            bool publishInfo = Time.frameCount % 30 == 0;
+            foreach (var kvp in _renderers)
+            {
+                var renderer = kvp.Value;
+                if (server.TryTakePendingFov(kvp.Key, out float fov))
+                    renderer.SetFieldOfView(Mathf.Clamp(fov, renderer.GetMinFOV(), renderer.GetMaxFOV()));
+
+                if (publishInfo)
+                    server.PublishCameraInfo(kvp.Key, renderer.GetDisplayName(),
+                        renderer.GetFOV(), renderer.GetMinFOV(), renderer.GetMaxFOV());
+            }
+        }
+
         private void CleanupInvalidCameras()
         {
             // Ensure timewarping oddness doesn't cause us to dispose renderers that are just paused
@@ -99,6 +119,22 @@ namespace JustReadTheInstructions
 
             foreach (var id in invalidIds)
                 CloseCamera(id);
+
+            PruneRuntimeIds();
+        }
+
+        private void PruneRuntimeIds()
+        {
+            if (!FlightGlobals.ready) return;
+
+            var live = new HashSet<uint>();
+            foreach (var camera in GetAllAvailableCameras())
+            {
+                if (camera?.part != null)
+                    live.Add(camera.part.persistentId);
+            }
+
+            JRTICameraRuntime.RetainOnly(live);
         }
 
         public void OpenCamera(MuMechModuleHullCamera hullCamera)
@@ -212,27 +248,7 @@ namespace JustReadTheInstructions
             return _streamOnlyRenderers.Contains(HullCameraRenderer.GetStableId(hullCamera));
         }
 
-        public bool HasCamera(int stableId) => _renderers.ContainsKey(stableId);
-
-        public float? GetFov(int stableId)
-            => _renderers.TryGetValue(stableId, out var r) ? r.GetFOV() : (float?)null;
-
-        public float? GetFovMin(int stableId)
-            => _renderers.TryGetValue(stableId, out var r) ? r.GetMinFOV() : (float?)null;
-
-        public float? GetFovMax(int stableId)
-            => _renderers.TryGetValue(stableId, out var r) ? r.GetMaxFOV() : (float?)null;
-
-        public void SetFov(int stableId, float fov)
-        {
-            if (!_renderers.TryGetValue(stableId, out var r)) return;
-            r.SetFieldOfView(Mathf.Clamp(fov, r.GetMinFOV(), r.GetMaxFOV()));
-        }
-
         public int GetOpenCameraCount() => _renderers.Count;
-
-        public string GetCameraDisplayName(int stableId)
-            => _renderers.TryGetValue(stableId, out var r) ? r.GetDisplayName() : null;
 
         public void UpdateAllCameraVisualEffects()
         {

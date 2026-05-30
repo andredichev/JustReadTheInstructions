@@ -48,9 +48,10 @@ namespace JustReadTheInstructions
             InitializeStyles();
             CalculateInitialSize();
 
+            int cascade = windowId % 10;
             _windowRect = new Rect(
-                Screen.width - _windowWidth - 40,
-                100 + (windowId * 30),
+                Screen.width - _windowWidth - 40 - cascade * 24,
+                100 + cascade * 30,
                 _windowWidth,
                 _windowHeight
             );

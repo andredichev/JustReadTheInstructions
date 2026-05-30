@@ -27,6 +27,7 @@ namespace JustReadTheInstructions
 
         public static bool IsLoaded { get; private set; }
 
+        public static bool EnableStreamServer { get; internal set; } = true;
         public static int StreamPort { get; internal set; } = 8080;
         public static int StreamJpegQuality { get; internal set; } = 90;
         public static int StreamMaxFps { get; internal set; } = 30;
@@ -101,6 +102,7 @@ namespace JustReadTheInstructions
                 FixedPreviewAspectRatio = ParseBool(settings, "FixedPreviewAspectRatio", FixedPreviewAspectRatio);
                 MinimalUI = ParseBool(settings, "MinimalUI", MinimalUI);
                 MaxPreviewSize = ParseInt(settings, "MaxPreviewSize", MaxPreviewSize);
+                EnableStreamServer = ParseBool(settings, "EnableStreamServer", EnableStreamServer);
                 StreamPort = ParseInt(settings, "StreamPort", StreamPort);
                 StreamJpegQuality = ParseInt(settings, "StreamJpegQuality", StreamJpegQuality);
                 StreamMaxFps = ParseInt(settings, "StreamMaxFps", StreamMaxFps);
@@ -145,6 +147,7 @@ namespace JustReadTheInstructions
                 settings.AddValue("MinimalUI", MinimalUI);
                 settings.AddValue("MaxPreviewSize", MaxPreviewSize);
                 settings.AddValue("MaxOpenCameras", MaxOpenCameras);
+                settings.AddValue("EnableStreamServer", EnableStreamServer);
                 settings.AddValue("StreamPort", StreamPort);
                 settings.AddValue("StreamJpegQuality", StreamJpegQuality);
                 settings.AddValue("StreamMaxFps", StreamMaxFps);
