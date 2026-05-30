@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Versioning note:** versions use the four-part `MAJOR.MINOR.PATCH.BUILD` form that KSP/Unity DLLs expect. The first three parts follow SemVer; the fourth part (`BUILD`) is repurposed here to mark pre-release / beta iterations of an upcoming version.
 
-## Unreleased
+## v2.3.0 - 2026-05-30
 
 ### Added
 
@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Camera windows now cascade on screen when opened instead of all stacking in the bottom-right corner
 - Camera windows now open in full UI mode by default - minimal mode (preview only) can be enabled in settings or toggled per-window with a double-click
 - Double-clicking the camera preview to toggle minimal mode now correctly resizes the window immediately (used to bug out and not properly resize until the next manual resize from the user)
+
 
 ## v2.2.0.1 - 2026-04-24
 
