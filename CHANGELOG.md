@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Versioning note:** versions use the four-part `MAJOR.MINOR.PATCH.BUILD` form that KSP/Unity DLLs expect. The first three parts follow SemVer; the fourth part (`BUILD`) is repurposed here to mark pre-release / beta iterations of an upcoming version.
 
+## Unreleased
+
+### Added
+
+- **(Experimental)** Scatterer sun flare now renders through JRTI cameras - the per-camera sun flare hook is mirrored onto our cameras via reflection so the flare stops being culled on the JRTI feed. Requires Scatterer integration enabled. New this beta and lightly tested - please report flares that fail to appear at some sun angles, look misplaced, or affect the main view
+
+### Fixed
+
+- Night-vision camera mode no longer brightens the main game view - the night-vision filter cloned onto JRTI cameras was forcing the scene-global ambient light high every frame, which bled onto the main camera; the boost is now confined to the JRTI camera's own render pass. Builds on andredichev's fix for the same issue
+
+
 ## v2.3.0 - 2026-05-30
 
 ### Added

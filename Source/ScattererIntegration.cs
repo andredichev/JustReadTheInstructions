@@ -10,6 +10,20 @@ namespace JustReadTheInstructions
         private static bool? _isAvailable;
         private static Type[] _scattererMonoBehaviourTypes;
 
+        private static readonly string[] _hookTypeNames =
+        {
+            "CameraRenderingHook",
+            "SunflareCameraHook",
+        };
+
+        private static bool IsClonableHook(Type type)
+        {
+            foreach (var name in _hookTypeNames)
+                if (type.Name.Contains(name))
+                    return true;
+            return false;
+        }
+
         public static bool IsAvailable
         {
             get
@@ -83,7 +97,7 @@ namespace JustReadTheInstructions
 
             foreach (var hookType in _scattererMonoBehaviourTypes)
             {
-                if (!hookType.Name.Contains("CameraRenderingHook"))
+                if (!IsClonableHook(hookType))
                     continue;
 
                 var hook = camera.gameObject.GetComponent(hookType);
@@ -99,7 +113,7 @@ namespace JustReadTheInstructions
 
             foreach (var hookType in _scattererMonoBehaviourTypes)
             {
-                if (!hookType.Name.Contains("CameraRenderingHook"))
+                if (!IsClonableHook(hookType))
                     continue;
 
                 if (target.gameObject.GetComponent(hookType) != null)

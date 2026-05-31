@@ -17,6 +17,11 @@ namespace JustReadTheInstructions
         private static Type _eCameraModeType;
         private static object _normalModeValue;
 
+        private static FieldInfo _cameraFilterField;
+        private static FieldInfo _ambienceLevelField;
+
+        private const int NightVisionMode = 8;
+
         private static bool _cachePrepopulated;
 
         private class CachedFilter
@@ -206,6 +211,65 @@ namespace JustReadTheInstructions
             {
                 try { field.SetValue(existing, value); }
                 catch { }
+            }
+
+            if (existing != null)
+                existing.enabled = false;
+        }
+
+        public static void RenderWithFilter(Camera targetCamera, MuMechModuleHullCamera hullCamera)
+        {
+            if (targetCamera == null)
+                return;
+
+            var comp = FindHullcamComponent(targetCamera);
+            if (comp == null)
+            {
+                targetCamera.Render();
+                return;
+            }
+
+            bool nightVision = hullCamera != null && (int)hullCamera.cameraMode == NightVisionMode;
+            Color savedAmbient = RenderSettings.ambientLight;
+
+            if (nightVision)
+            {
+                float level = GetNightVisionAmbience(comp);
+                RenderSettings.ambientLight = new Color(level, level, level, 1f);
+            }
+
+            comp.enabled = true;
+            targetCamera.Render();
+            comp.enabled = false;
+
+            if (nightVision)
+                RenderSettings.ambientLight = savedAmbient;
+        }
+
+        private static float GetNightVisionAmbience(MonoBehaviour filterComponent)
+        {
+            try
+            {
+                if (_cameraFilterField == null)
+                    _cameraFilterField = filterComponent.GetType().GetField(
+                        "cameraFilter", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                var filter = _cameraFilterField?.GetValue(filterComponent);
+                if (filter == null)
+                    return 0.7f;
+
+                if (_ambienceLevelField == null || _ambienceLevelField.DeclaringType != filter.GetType())
+                    _ambienceLevelField = filter.GetType().GetField(
+                        "ambienceLevel", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (_ambienceLevelField == null)
+                    return 0.7f;
+
+                return (float)_ambienceLevelField.GetValue(filter);
+            }
+            catch
+            {
+                return 0.7f;
             }
         }
 

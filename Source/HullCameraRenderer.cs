@@ -266,21 +266,26 @@ namespace JustReadTheInstructions
 
             StripRaymarchedLightBuffers();
 
+            bool filterActive = JRTISettings.EnableHullcamFilter && HullcamFilterIntegration.IsAvailable;
+            if (filterActive)
+                HullcamFilterIntegration.SyncToCamera(_cameras[NearCameraIndex], _hullCamera);
+
             for (int i = _cameras.Length - 1; i >= 0; i--)
             {
                 var camera = _cameras[i];
                 if (camera == null) continue;
                 camera.targetTexture = TargetTexture;
                 camera.GetComponent<CameraSynchronizer>()?.ManualSync();
-                camera.Render();
+
+                if (i == NearCameraIndex && filterActive)
+                    HullcamFilterIntegration.RenderWithFilter(camera, _hullCamera);
+                else
+                    camera.Render();
             }
 
             RestoreRaymarchedLightBuffers();
 
             if (_fireflyApplied) UpdateFireflyEffects();
-
-            if (JRTISettings.EnableHullcamFilter && HullcamFilterIntegration.IsAvailable)
-                HullcamFilterIntegration.SyncToCamera(_cameras[NearCameraIndex], _hullCamera);
 
             if (JRTISettings.EnableDockingOverlay && GetCameraMode() == CameraFilter.eCameraMode.DockingCam)
                 _dockingOverlay.Render(TargetTexture);

@@ -51,6 +51,11 @@ jobs:
           sed -i "s/^## ${BARE}/## v${BARE}/" CHANGELOG.md
           git add CHANGELOG.md
 
+      - name: Sync Kerbal Changelog cfg
+        run: |
+          python3 Tools/generate_changelog_cfg.py
+          git add GameData/JustReadTheInstructions/changelog.cfg
+
       - name: Commit and tag
         run: |
           git config --global user.name "github-actions"
