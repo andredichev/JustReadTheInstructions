@@ -23,7 +23,7 @@
 > [!NOTE]
 > **JRTI is a tech demo as much as it is a mod - an experiment to see how far KSP can be pushed.**
 >
-> The mod is stable and usable, but expect a few unpolished edges. You may still encounter bugs, performance issues, or missing features. If you do, please report them in the Issues tab with your log file attached. Prefixing the title with `Bug:` helps with triage.
+> The mod is stable, but expect a few quirks. You may still encounter bugs or performance issues, but nothing that should hold you back from using the mod. If you do, please report them in the Issues tab with your log file attached. Prefixing the title with `Bug:` helps with triage.
 
 ---
 
@@ -33,6 +33,28 @@
 ## Overview
 
 **Just Read The Instructions** (**JRTI**) is a mod for **Kerbal Space Program** that lets you view your **Hullcam VDS** camera feeds in a web browser, in the spirit of **OCISLY**.
+
+## Project Status
+
+> [!NOTE]
+> **JRTI is now considered stable and feature-complete.** It works great, does what it set out to do, and I'm happy to call this a finished release rather than a perpetual work in progress.
+
+After a long and genuinely enjoyable time building it, I'm stepping back from **frequent** major updates. The mod is in a good place, and the ideas I have left are either too big or fall outside its core purpose, and I'd rather leave it polished and whole than keep piling on for the sake of it.
+
+It is **not** abandoned, though. I'll still come back for:
+
+* **Major feature updates** which may still come out but at a much slower pace and depend a lot on how busy life gets
+* **Great community suggestions** that fit the vision and that most players would benefit from
+* **Quality-of-life tweaks** I get reminded of along the way
+* **Security fixes** and important patches (we never know what could happen!)
+
+Realistically, expect minor patches and QoL roughly every few weeks *if* suggestions keep rolling in, and otherwise I'll drop by now and then as the mood strikes, just less often when there's no feedback to ponder on. University starts for me in a few months as of this README commit, so my time will be a lot more limited too.
+
+For anything **major**, pull requests are always welcome and I'm very open-minded, as long as a change fits the mod's vision, I'd love to see it.
+I will **gladly** read any issues or PRs that may come up at any time.
+
+Thank you to everyone who has downloaded the mod, gave feedback, or contributed... This has been a wonderful thing to build.
+o7 and have fun :D
 
 ## Requirements
 
